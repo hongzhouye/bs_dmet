@@ -1,0 +1,7 @@
+# C++ intermediates
+*.o
+hub
+
+# unimportant data
+*.dat
+cost/*
