@@ -72,21 +72,6 @@ void HUBBARD::_init_ ()
 	// setup nup/ndn vectors
 	nup.setZero ();
 	ndn.setZero ();
-	_build_F_ ();
-	_eigh_ (Fup, Cup, eup);	
-	_eigh_ (Fdn, Cdn, edn);	
-	Pup = Cup * occ * Cup.transpose ();	nup = Pup.diagonal ();
-	Pdn = Cdn * occb * Cdn.transpose ();	ndn = Pdn.diagonal ();
-	_build_F_ ();	
-
-	// setup for diis
-	/*Fsup.max_size = MAX_DIIS;
-	Fsdn.max_size = MAX_DIIS;
-	errsup.max_size = MAX_DIIS;
-	errsdn.max_size = MAX_DIIS;
-	Fsup.allocate ();	Fsdn.allocate ();
-	errsup.allocate ();	errsdn.allocate ();
-	*/
 }
 
 // build the Fock matrices for both spins
@@ -124,21 +109,28 @@ void HUBBARD::_hubbard_general_ ()
 	// initialization 
 	_init_ ();
 
-
-	VectorXd nupnew = nup, ndnnew = ndn;
-	double er = 100., mix_beta = 0.7;
+	VectorXd nupnew, ndnnew;
+	double er = 100., erc, mix_beta = 0.7;
 	int iter = 0;
 
-	printf ("#iter\terror\n");
+	printf ("#iter\terror\t\t|[F, p]|\n");
 	while (iter < SCF_ITER && er > SCF_CONV)
 	{
-		// build new F, P and n
+		// build new F
 		_build_F_ ();
 
-		// er = ||[F, P]||
-		er = _error_ ();
+		// erc = ||[F, P]||
+		erc = _error_ ();
+
+		// diagonalizing F
+		_eigh_ (Fup, Cup, eup);	
+		_eigh_ (Fdn, Cdn, edn);	
+		Pup = Cup * occ * Cup.transpose ();	nupnew = Pup.diagonal ();
+		Pdn = Cdn * occb * Cdn.transpose ();	ndnnew = Pdn.diagonal ();
+
+		er = ((nup - nupnew).norm () + (ndn - ndnnew).norm ()) / 2.;
 		iter ++;
-		printf ("%4d\t%.3e\n", iter, er);	
+		printf ("%4d\t%.3e\t%.3e\n", iter, er, erc);	
 
 		if (er < SCF_CONV)
 		{
@@ -147,11 +139,6 @@ void HUBBARD::_hubbard_general_ ()
 		}
 		else
 		{
-			_eigh_ (Fup, Cup, eup);	
-			_eigh_ (Fdn, Cdn, edn);	
-			Pup = Cup * occ * Cup.transpose ();	nupnew = Pup.diagonal ();
-			Pdn = Cdn * occb * Cdn.transpose ();	ndnnew = Pdn.diagonal ();
-
 			// mix densities
 			nup = mix_beta * nupnew + (1. - mix_beta) * nup;
 			ndn = mix_beta * ndnnew + (1. - mix_beta) * ndn;
