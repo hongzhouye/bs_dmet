@@ -3,6 +3,7 @@
 #include "include/hf.h"
 #include "include/hubbard.h"
 #include "include/schmidt.h"
+#include "include/hred.h"
 #include "include/read.h"
 
 using namespace std;
@@ -27,5 +28,9 @@ int main (int argc, char * argv[])
 
 	// Schmidt
 	sm._schmidt_ (hub);
+
+	// Construct Hred
+	HRED hr;
+	hr._xform_ (hub, sm);
 	return 0;
 }
