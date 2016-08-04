@@ -16,15 +16,6 @@
 using namespace std;
 using namespace Eigen;
 
-// eigen solver for Hermitian matrix
-void _eigh_ (const MatrixXd& A, MatrixXd& U, VectorXd& D)
-{
-	esXd es;
-	es.compute (A);
-	D = es.eigenvalues ();
-	U = es.eigenvectors ();
-}
-
 class HUBBARD
 {
 	public:
@@ -34,7 +25,7 @@ class HUBBARD
 		VectorXd nup, ndn, eup, edn;
 		MatrixXd Fup, Fdn, occ, occb, Cup, Cdn, Pup, Pdn;
 		//Matdeq Fsup, Fsdn, errsup, errsdn;
-		HUBBARD (char *);
+		//HUBBARD (char *);
 		void _init_ ();
 		void _build_F_ ();
 		double _error_ ();
@@ -42,18 +33,6 @@ class HUBBARD
 		double _get_E_ ();
 		void _print_ ();
 };
-
-// read parameters
-HUBBARD::HUBBARD (char * name)
-{
-	FILE * pw = fopen (name, "r");
-	fscanf (pw, "%d", &K);	fscanf (pw, "\n");
-	fscanf (pw, "%d", &Nup);	fscanf (pw, "\n");
-	fscanf (pw, "%d", &Ndn);	fscanf (pw, "\n");
-	fscanf (pw, "%c", &BC);	fscanf (pw, "\n");
-	fscanf (pw, "%lf", &U);
-	fclose (pw);
-}
 
 // Initialization
 void HUBBARD::_init_ ()
