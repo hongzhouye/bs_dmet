@@ -2,8 +2,10 @@
 #define _HF_INCLUDED_
 
 #include <Eigen/Dense>
+#include <iostream>
 
 using namespace Eigen;
+using namespace std;
 
 #define SCF_ITER 1E3
 #define SCF_CONV 1E-6
@@ -16,6 +18,7 @@ using namespace Eigen;
 //typedef Matrix<double, K, K> MatrixKd;
 //typedef Matrix<double, K, 1> VectorKd;
 #define esXd SelfAdjointEigenSolver<MatrixXd> 
+#define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 
 // eigen solver for Hermitian matrix
 void _eigh_ (const MatrixXd& A, MatrixXd& U, VectorXd& D)
@@ -41,6 +44,20 @@ void _revert_ (MatrixXd& U, VectorXd& d)
 	}
 
 	U = Up;	d = dp;
+}
+
+// generate double type array
+double * _darray_gen_ (int size)
+{
+	int i;
+	double * p = new double[size];
+	if (p == NULL)
+	{
+		cout << "Allocate memory error!\n";
+		exit (1);
+	}
+	for (i = 0; i < size; i++)	p[i] = 0.;
+	return p;
 }
 
 #endif

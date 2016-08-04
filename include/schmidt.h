@@ -22,6 +22,8 @@ class SCHMIDT
 
 void SCHMIDT::_schmidt_ (HUBBARD& hub)
 {
+	int i;
+
 	// prefix 'r' for raw (i.e. untransformed)
 	MatrixXd rCFup, rCFdn;		
 	rCFup = hub.Cup.block (0, 0, Nimp, Nup);
@@ -36,6 +38,14 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 
 	Cup = hub.Cup.block (0, 0, K, Nup) * Wup;
 	Cdn = hub.Cdn.block (0, 0, K, Ndn) * Wdn;
+
+	for (i = 0; i < Nimp; i++)
+	{
+		Cup.block (0, i, Nimp, 1) /= sqrt(dup (i));
+		Cdn.block (0, i, Nimp, 1) /= sqrt(ddn (i));
+		Cup.block (Nimp, i, K - Nimp, 1) /= sqrt (1. - dup (i));
+		Cdn.block (Nimp, i, K - Nimp, 1) /= sqrt (1. - ddn (i));
+	}
 
 	_form_xform_mat_ ();
 }

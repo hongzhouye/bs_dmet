@@ -23,9 +23,7 @@ class HUBBARD
 		double U;
 		char BC;
 		VectorXd nup, ndn, eup, edn;
-		MatrixXd Fup, Fdn, occ, occb, Cup, Cdn, Pup, Pdn;
-		//Matdeq Fsup, Fsdn, errsup, errsdn;
-		//HUBBARD (char *);
+		MatrixXd hup, hdn, Fup, Fdn, occ, occb, Cup, Cdn, Pup, Pdn;
 		void _init_ ();
 		void _build_F_ ();
 		double _error_ ();
@@ -37,8 +35,12 @@ class HUBBARD
 // Initialization
 void HUBBARD::_init_ ()
 {
+	int mu;
+
 	// set the dimension for all matrices
-	nup.setZero (K); ndn.setZero (K); eup.setZero (K); edn.setZero (K);
+	nup.setZero (K); ndn.setZero (K); 
+	eup.setZero (K); edn.setZero (K);
+	hup.setZero (K, K); hdn.setZero (K, K);
 	Fup.setZero (K, K); Fdn.setZero (K, K); 
 	occ.setZero (K, K); occb.setZero (K, K); 
 	Cup.setZero (K, K); Cdn.setZero (K, K); 
@@ -48,28 +50,25 @@ void HUBBARD::_init_ ()
 	occ.topLeftCorner (Nup, Nup).diagonal ().setConstant (1.);
 	occb.topLeftCorner (Ndn, Ndn).diagonal ().setConstant (1.);
 
-	// setup nup/ndn vectors
+	// CORE guess (Szabo89book page 148)
 	nup.setZero ();
 	ndn.setZero ();
+
+	// setup h matrix
+	for (mu = 0; mu < K - 1; mu ++)
+		hup (mu, mu + 1) = hup (mu + 1, mu) = 
+			hdn (mu, mu + 1) = hdn (mu + 1, mu) = -1.;
+	hup (0, K - 1) = hup (K - 1, 0) =
+		hdn (0, K - 1) = hdn (K - 1, 0) = (BC == 'a') ? (1.) : (-1.);
 }
 
 // build the Fock matrices for both spins
 void HUBBARD::_build_F_ ()
 {
-	Fup.setZero ();
-	Fdn.setZero ();
-
-	int i;
-	for (i = 0; i < K; i++)
-	{
-		Fup (i, i) = U * ndn (i);
-		Fdn (i, i) = U * nup (i);
-		Fup (i, jup(i)) = Fup (i, jdn(i)) = -1.;
-		Fdn (i, jup(i)) = Fdn (i, jdn(i)) = -1.;
-	}
-	if (BC == 'a')
-		Fup (0, K - 1) = Fup (K - 1, 0) = 
-			Fdn (0, K - 1) = Fdn (K - 1, 0) = 1;
+	Fup = hup;
+	Fdn = hdn;
+	Fup += U * (ndn.asDiagonal ());
+	Fdn += U * (nup.asDiagonal ());
 }
 
 // calculate diis error
