@@ -19,11 +19,11 @@ using namespace Eigen;
 class HUBBARD
 {
 	public:
-		int Nup, Ndn, K;
+		int N, K;
 		double U;
 		char BC;
-		VectorXd nup, ndn, eup, edn;
-		MatrixXd hup, hdn, Fup, Fdn, occ, occb, Cup, Cdn, Pup, Pdn;
+		VectorXd n, e;
+		MatrixXd h, F, occ, C, P;
 		void _init_ ();
 		void _build_F_ ();
 		double _error_ ();
@@ -37,48 +37,41 @@ void HUBBARD::_init_ ()
 {
 	int mu;
 
-	// set the dimension for all matrices
-	nup.setZero (K); ndn.setZero (K); 
-	eup.setZero (K); edn.setZero (K);
-	hup.setZero (K, K); hdn.setZero (K, K);
-	Fup.setZero (K, K); Fdn.setZero (K, K); 
-	occ.setZero (K, K); occb.setZero (K, K); 
-	Cup.setZero (K, K); Cdn.setZero (K, K); 
-	Pup.setZero (K, K); Pdn.setZero (K, K);
+	// set the dimension for all matrices/vectors
+	n.setZero (K);
+	e.setZero (K);
+	h.setZero (K, K);
+	F.setZero (K, K);
+	occ.setZero (K, K);
+	C.setZero (K, K);
+	P.setZero (K, K);
 
 	// setup occupation matrices
-	occ.topLeftCorner (Nup, Nup).diagonal ().setConstant (1.);
-	occb.topLeftCorner (Ndn, Ndn).diagonal ().setConstant (1.);
+	occ.topLeftCorner (N, N).diagonal ().setConstant (1.);
 
 	// CORE guess (Szabo89book page 148)
-	nup.setZero ();
-	ndn.setZero ();
+	n.setZero ();
 
 	// setup h matrix
 	for (mu = 0; mu < K - 1; mu ++)
-		hup (mu, mu + 1) = hup (mu + 1, mu) = 
-			hdn (mu, mu + 1) = hdn (mu + 1, mu) = -1.;
-	hup (0, K - 1) = hup (K - 1, 0) =
-		hdn (0, K - 1) = hdn (K - 1, 0) = (BC == 'a') ? (1.) : (-1.);
+		h (mu, mu + 1) = h (mu + 1, mu) = -1.;
+	h (0, K - 1) = h (K - 1, 0) = (BC == 'a') ? (1.) : (-1.);
 }
 
 // build the Fock matrices for both spins
 void HUBBARD::_build_F_ ()
 {
-	Fup = hup;
-	Fdn = hdn;
-	Fup += U * (ndn.asDiagonal ());
-	Fdn += U * (nup.asDiagonal ());
+	F = h;
+	F += U * (n.asDiagonal ());
 }
 
 // calculate diis error
 double HUBBARD::_error_ ()
 {
-	MatrixXd errup, errdn;
-	errup = Fup * Pup - Pup * Fup;		
-	errdn = Fdn * Pdn - Pdn * Fdn;		
+	MatrixXd err;
+	err = F * P - P * F;		
 
-	return (errup.norm () + errdn.norm ()) / (2. * K);
+	return err.norm () / K;
 }
 
 // solve the Hubbard model for the translational symmetric case
@@ -87,7 +80,7 @@ void HUBBARD::_hubbard_general_ ()
 	// initialization 
 	_init_ ();
 
-	VectorXd nupnew, ndnnew;
+	VectorXd nnew;
 	double er = 100., erc, mix_beta = 0.7;
 	int iter = 0;
 
@@ -101,12 +94,10 @@ void HUBBARD::_hubbard_general_ ()
 		erc = _error_ ();
 
 		// diagonalizing F
-		_eigh_ (Fup, Cup, eup);	
-		_eigh_ (Fdn, Cdn, edn);	
-		Pup = Cup * occ * Cup.transpose ();	nupnew = Pup.diagonal ();
-		Pdn = Cdn * occb * Cdn.transpose ();	ndnnew = Pdn.diagonal ();
+		_eigh_ (F, C, e);	
+		P = C * occ * C.transpose ();	nnew = P.diagonal ();
 
-		er = ((nup - nupnew).norm () + (ndn - ndnnew).norm ()) / 2.;
+		er = (n - nnew).norm ();
 		iter ++;
 		printf ("%4d\t%.3e\t%.3e\n", iter, er, erc);	
 
@@ -118,8 +109,7 @@ void HUBBARD::_hubbard_general_ ()
 		else
 		{
 			// mix densities
-			nup = mix_beta * nupnew + (1. - mix_beta) * nup;
-			ndn = mix_beta * ndnnew + (1. - mix_beta) * ndn;
+			n = mix_beta * nnew + (1. - mix_beta) * n;
 		}
 	}
 	cout << endl;
@@ -130,26 +120,18 @@ double HUBBARD::_get_E_ ()
 {
 	int mu, nu;
 	double Etot = 0.;
-	for (mu = 0; mu < K; mu++)
-		Etot += - (Pup (jup(mu), mu) + Pup (jdn(mu), mu) +
-				Pdn (jup(mu), mu) + Pdn (jdn(mu), mu)) + 
-			U * nup (mu) * ndn (mu) ;
+	for (mu = 0; mu < K - 1; mu++)
+		Etot += -2. * (P (mu, mu + 1) + P (mu + 1, mu)) + U * n (mu) * n (mu);
+	Etot += -2. * (P (0, K - 1) + P (K - 1, 0)) + U * n (K - 1) * n (K - 1);
 
 	return Etot;
 }
 
 void HUBBARD::_print_ ()
 {
-	MatrixXd n_collect (K, 2);
-	n_collect.block (0, 0, K, 1) = nup;
-	n_collect.block (0, 1, K, 1) = ndn;
-	MatrixXd e_collect (K, 2);
-	e_collect.block (0, 0, K, 1) = eup;
-	e_collect.block (0, 1, K, 1) = edn;
-	cout << "Occupation:\n" << n_collect << "\n\n";
-	cout << "energy levels:\n" << e_collect << "\n\n";
-	cout << "Density matrix for spin alpha:\n" << Pup << "\n\n";
-	cout << "Density matrix for spin beta:\n" << Pdn << "\n\n";
+	cout << "energy levels:\n" << e << "\n\n";
+	cout << "Occupation:\n" << n << "\n\n";
+	cout << "Density matrix:\n" << P << "\n\n";
 	cout << "Total Energy: " << _get_E_ () << "\n\n";
 }
 

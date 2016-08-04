@@ -10,11 +10,11 @@ using namespace Eigen;
 class SCHMIDT
 {
 	public:
-		int K, Nup, Ndn, Nimp;
-		MatrixXd Wup, Wdn;				// M = W * d * W^T
-		VectorXd dup, ddn;				// Singular values
-		MatrixXd Cup, Cdn;				// W-transformed C's
-		MatrixXd Tup, Tdn, TEup, TEdn;
+		int K, N, Nimp;
+		MatrixXd W;				// M = W * d * W^T
+		VectorXd d;				// Singular values
+		MatrixXd C;				// W-transformed C's
+		MatrixXd T, TE;
 		//SCHMIDT (char*, HUBBARD&);
 		void _schmidt_ (HUBBARD&);
 		void _form_xform_mat_ ();
@@ -25,26 +25,20 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 	int i;
 
 	// prefix 'r' for raw (i.e. untransformed)
-	MatrixXd rCFup, rCFdn;		
-	rCFup = hub.Cup.block (0, 0, Nimp, Nup);
-	rCFdn = hub.Cdn.block (0, 0, Nimp, Ndn);
+	MatrixXd rCF;		
+	rCF = hub.C.block (0, 0, Nimp, N);
 
-	MatrixXd Mup, Mdn;
-	Mup = rCFup.transpose () * rCFup;
-	Mdn = rCFdn.transpose () * rCFdn;
+	MatrixXd M;
+	M = rCF.transpose () * rCF;
 
-	_eigh_ (Mup, Wup, dup);	_revert_ (Wup, dup);
-	_eigh_ (Mdn, Wdn, ddn); _revert_ (Wdn, ddn);
+	_eigh_ (M, W, d);	_revert_ (W, d);
 
-	Cup = hub.Cup.block (0, 0, K, Nup) * Wup;
-	Cdn = hub.Cdn.block (0, 0, K, Ndn) * Wdn;
+	C = hub.C.block (0, 0, K, N) * W;
 
 	for (i = 0; i < Nimp; i++)
 	{
-		Cup.block (0, i, Nimp, 1) /= sqrt(dup (i));
-		Cdn.block (0, i, Nimp, 1) /= sqrt(ddn (i));
-		Cup.block (Nimp, i, K - Nimp, 1) /= sqrt (1. - dup (i));
-		Cdn.block (Nimp, i, K - Nimp, 1) /= sqrt (1. - ddn (i));
+		C.block (0, i, Nimp, 1) /= sqrt(d (i));
+		C.block (Nimp, i, K - Nimp, 1) /= sqrt (1. - d (i));
 	}
 
 	_form_xform_mat_ ();
@@ -52,18 +46,14 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 
 void SCHMIDT::_form_xform_mat_ ()
 {
-	Tup.setZero (K, 2 * Nimp);
-	Tdn.setZero (K, 2 * Nimp);
-	Tup.topLeftCorner (Nimp, Nimp) = Cup.topLeftCorner (Nimp, Nimp);
-	Tdn.topLeftCorner (Nimp, Nimp) = Cdn.topLeftCorner (Nimp, Nimp);
-	Tup.bottomRightCorner (K - Nimp, Nimp) = Cup.bottomLeftCorner (K - Nimp, Nimp);
-	Tdn.bottomRightCorner (K - Nimp, Nimp) = Cdn.bottomLeftCorner (K - Nimp, Nimp);
-	TEup = Cup.topRightCorner (K, Nup - Nimp);
-	TEdn = Cdn.topRightCorner (K, Ndn - Nimp);
+	T.setZero (K, 2 * Nimp);
+	T.topLeftCorner (Nimp, Nimp) = C.topLeftCorner (Nimp, Nimp);
+	T.bottomRightCorner (K - Nimp, Nimp) = C.bottomLeftCorner (K - Nimp, Nimp);
+	TE = C.topRightCorner (K, N - Nimp);
 
-	cout << "Cdn:\n" << Cdn << "\n\n";
-	cout << "Tdn:\n" << Tdn << "\n\n";
-	cout << "TEdn:\n" << TEdn << "\n\n";
+	cout << "C:\n" << C << "\n\n";
+	cout << "T:\n" << T << "\n\n";
+	cout << "TE:\n" << TE << "\n\n";
 }
 
 #endif

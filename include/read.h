@@ -35,15 +35,14 @@ void _read_ (char * fname, HUBBARD& hub, SCHMIDT& sm)
 			if (_uppercase_ (line) == "HUBBARD")
 			{
 				getline (input, line);	hub.K = stoi (line);
-				getline (input, line);	hub.Nup = stoi (line);
-				getline (input, line);	hub.Ndn = stoi (line);
+				getline (input, line);	hub.N = stoi (line);
 				input.get (hub.BC);		getline (input, line);	// eat '\n'
 				getline (input, line);	hub.U = stod (line);
 			}
 			else if (_uppercase_ (line) == "SCHMIDT")
 			{
 				getline (input, line);	sm.Nimp = stoi (line);
-				sm.K = hub.K; sm.Nup = hub.Nup; sm.Ndn = hub.Ndn;
+				sm.K = hub.K; sm.N = hub.N;
 			}
 		}
 		input.close ();
