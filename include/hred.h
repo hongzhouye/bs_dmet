@@ -1,3 +1,6 @@
+#ifndef _HRED_H_INCLUDED_
+#define _HRED_H_INCLUDED_
+
 #include <Eigen/Dense>
 #include <cstdio>
 #include "hf.h"
@@ -21,9 +24,13 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 
 	// Environment's contribution to himp
 	MatrixXd hc = ((sm.TE * sm.TE.transpose ()).diagonal () * hub.U).asDiagonal ();
+	cout << "TE * TE^T:\n" << sm.TE * sm.TE.transpose () << "\n\n";
+	cout << "hc:\n" << hc << "\n\n";
+	cout << "hc-transformed:\n" << T.transpose () * hc * T << "\n\n";
 
 	// himp
 	h = T.transpose () * (hub.h + hc) * T;
+	cout << "test:\n" << T.transpose () * hub.h * T << "\n\n";
 
 	cout << "himp :\n" << h << "\n\n";
 
@@ -64,3 +71,5 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 		}
 	*/
 }
+
+#endif

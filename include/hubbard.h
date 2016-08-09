@@ -112,6 +112,7 @@ void HUBBARD::_hubbard_general_ ()
 			n = mix_beta * nnew + (1. - mix_beta) * n;
 		}
 	}
+	cout << "Hubbard C:\n" << C << "\n\n";
 	cout << endl;
 }
 

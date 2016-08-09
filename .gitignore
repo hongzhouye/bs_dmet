@@ -5,3 +5,6 @@ hub
 # unimportant data
 *.dat
 cost/*
+
+# script
+run/*
