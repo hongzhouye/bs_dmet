@@ -4,7 +4,7 @@
 #include "include/hubbard.h"
 #include "include/schmidt.h"
 #include "include/hred.h"
-#include "include/fci.h"
+#include "include/dfci.h"
 #include "include/read.h"
 
 using namespace std;
@@ -31,7 +31,9 @@ int main (int argc, char * argv[])
 	hr._xform_ (hub, sm);
 
 	// FCI on fragment
-	FCI fci (hr);
-	fci._fci_ ();
+	DFCI dfci;
+	dfci._init_ (hr);
+	cout << "FCI initialization succeeds!\n";
+	dfci._dfci_ ();
 	return 0;
 }

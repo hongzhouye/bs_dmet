@@ -60,4 +60,15 @@ double * _darray_gen_ (int size)
 	return p;
 }
 
+// n choose k function
+long int _nchoosek_ (int n, int k)
+{
+	int i;
+	double prod = 1.;
+	if (k == 0)	return 1;
+	for (i = 1; i <= k; i++)
+		prod *= (double) (n - k + i) / i;
+	return (long int) prod;
+}
+
 #endif
