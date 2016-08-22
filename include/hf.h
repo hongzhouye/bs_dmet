@@ -15,8 +15,6 @@ using namespace std;
 #define mixing_beta_HL 0.2
 #define ZERO 1E-14
 
-//typedef Matrix<double, K, K> MatrixKd;
-//typedef Matrix<double, K, 1> VectorKd;
 #define esXd SelfAdjointEigenSolver<MatrixXd> 
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 

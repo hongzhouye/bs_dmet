@@ -13,6 +13,7 @@
 using namespace std;
 
 string _uppercase_ (const string& s)
+// turn a string into all uppercase
 {
 	string result (s.length (), ' ');
 	transform (

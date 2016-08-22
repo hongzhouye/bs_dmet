@@ -1,0 +1,27 @@
+############################
+####	input file	  ######
+############################
+
+key word: hubbard (case insensitive)
+	
+	------------------------------------
+	type	description
+	------------------------------------
+	int		# of sites
+	int		# of alpha e^-'s
+			NOTE: N_alpha = N_beta
+	char	periodic boundary condition
+			'p' for periodic
+			'a' for anti-periodic
+	float	U value (t = -1 by default)	
+	------------------------------------
+
+
+key word: schmidt (case insensitive)
+
+	------------------------------------
+	type	description
+	------------------------------------
+	int		# of alpha fragment sites
+			NOTE: N_alpha = N_beta
+	------------------------------------

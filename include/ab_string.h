@@ -6,13 +6,14 @@
 
 using namespace std;
 
+// ref: J. Olsen and B. O. Roos, J. Chem. Phys. 89 (4), 1988
 
 class AB_STRING
 {
   public:
 	  short *str;		// alpha/beta strings, stored in 1D array
 	  long int *istr;	// indices of interacting strings
-	  short *sgn;		// sign
+	  short *sgn;		// sign of interacting strings
 	  int *cmpind;		// compound index kl for \hat{E}_{kl}
 	  int K;			// basis set size
 	  int Ne;			// # of alpha/beta occupied states
@@ -21,9 +22,12 @@ class AB_STRING
 };
 
 void AB_STRING::_init_ (int Nbs, int Nel)
+// Nbs: # of basis set functions
+// Nel: # of electrons
 {
 	K = Nbs; Ne = Nel;
-	itot = Ne * (K - Ne);
+	itot = Ne * (K - Ne);	// only single excitation
+    itot += Ne;             // connections to itself
 
 	str = new short [Ne];
 	sgn = new short [itot];
