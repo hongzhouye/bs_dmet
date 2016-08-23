@@ -3,7 +3,9 @@
 hub
 
 # unimportant data
-*.dat
+*.dat*
+*tmp*
+*temp*
 cost/*
 
 # script

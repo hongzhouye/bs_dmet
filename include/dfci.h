@@ -130,7 +130,7 @@ void DFCI::_init_ (HRED& hr)
 					// physicists' notation to chemists' notation!
 					V[ijkl] = hr.V[index4(i,k,j,l,K)];
 				}
-			printf("%d;%d;%10.7f\n", i, j, h[ij]);
+			//printf("%d;%d;%10.7f\n", i, j, h[ij]);
 			}
 		}
 
@@ -314,7 +314,7 @@ VectorXd DFCI::_Hx_ (MatrixXd& b, int col)
 				F(cstr2.istr[Jb]) += cstr.sgn[Kb] * cstr2.sgn[Jb] * V[cpind(ij,kl)] / 2.;
 			}
 		}
-		for (Ia = 0; Ia < tot; Ia++)	
+		for (Ia = 0; Ia < tot; Ia++)
 		{
 			sigma_1(Ia, Ib) += C.row(Ia) * F;
 			sigma_1(Ib, Ia) += F.transpose () * C.col(Ia);
@@ -364,11 +364,18 @@ void DFCI::_dfci_ ()
 	double lambda = At(0, 0);
 	VectorXd alpha (1);	alpha (0) = 1.;
 	VectorXd diagH = _diagH_ ();
-	cout << "diagH:\n" << diagH << endl << endl;
+
+	// CHECK
+	/*double dgH[tot * tot];	int kk;
+	for (kk = 0; kk < tot * tot; kk++)	dgH[kk] = diagH(kk);
+	sort (&dgH[0], &dgH[tot * tot]);
+	cout << "diagH:\n";
+	for (kk = 0; kk < tot * tot; kk++)	printf ("%18.16f\n", dgH[kk]);
+	*/
 
 	// Davidson iteration (see Davidson ref above)
 	int iter = 1, i;
-	VectorXd q (tot * tot);
+	VectorXd q (tot * tot), precond (tot * tot);
 	double temp;
 	cout << "iter\terror" << endl;
 	while (iter < MAX_DVDS_ITER)
@@ -377,7 +384,10 @@ void DFCI::_dfci_ ()
 		if (q.norm () < DVDS_CONV)	break;
 		else	cout << iter << "\t" << q.norm () << "\n";
 
-		q = q.cwiseQuotient (VectorXd::Constant (tot * tot, lambda) - diagH);
+		// offset preconditioner to avoid singularity
+		precond = VectorXd::Constant (tot * tot, lambda) - diagH +
+			VectorXd::Constant (tot * tot, 1e-15);
+		q = q.cwiseQuotient (precond);
 
 		// Schmidt orthonormalization
 		for (i = 0; i < iter; i++)
