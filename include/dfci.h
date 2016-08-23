@@ -113,20 +113,25 @@ void DFCI::_init_ (HRED& hr)
 	for (i = 1; i < lenh + 1; i++)	ioff[i] = ioff[i - 1] + i;
 
 	// set up h and V
+	int max = 0;
 	for (i = 0; i < K; i++)
 		for (j = 0; j <= i; j++)
 		{
 			ij = cpind(i,j);
 			h[ij] = hr.h (i, j);
-			for (k = 0; k < K; k++) h[ij] -= V[index4(i,k,k,j,K)] / 2.;
 			for (k = 0; k < K; k++)
+			{
+				h[ij] -= hr.V[index4(i,k,k,j,K)] / 2.;
 				for (l = 0; l <= k; l++)
 				{
 					kl = cpind(k,l);
+					if (kl > ij)	continue;
 					ijkl = cpind(ij,kl);
 					// physicists' notation to chemists' notation!
 					V[ijkl] = hr.V[index4(i,k,j,l,K)];
 				}
+			printf("%d;%d;%10.7f\n", i, j, h[ij]);
+			}
 		}
 
 	// malloc memory for 'astr'
@@ -215,17 +220,24 @@ VectorXd DFCI::_diagH_ ()
 	AB_STRING cstr, cstr2;
 
 	// one-body term
+	F.setZero ();
 	for (Ib = 0; Ib < tot; Ib++)
 	{
-		F.setZero ();	cstr = astr[Ib];
+		cstr = astr[Ib];
 		// loop over last N interacting strings
 		for (i = 0; i < N; i++)
 		{
 			pos = cstr.itot - i - 1;
 			ii = cstr.cmpind[pos];
 			F(Ib) += h[ii];
+			for (k = 0; k < N; k++)
+			{
+				pos = cstr.itot - k - 1;
+				kk = cstr.cmpind[pos];
+				F(Ib) += V[cpind(ii,kk)] / 2.;
+			}
 		}
-		for (i = 0; i < cstr.itot; i++)
+		for (i = 0; i < cstr.itot - N; i++)
 		{
 			ij = cstr.cmpind[i];
 			F(Ib) += V[cpind(ij,ij)] / 2.;
@@ -284,6 +296,7 @@ VectorXd DFCI::_Hx_ (MatrixXd& b, int col)
 	// forming sigma_1
 	VectorXd F (tot);
 	MatrixXd sigma_1 (tot, tot), sigma_3 (tot, tot);
+	sigma_1.setZero ();
 	AB_STRING cstr, cstr2;		// current string in the 1st and 2nd loops
 	for (Ib = 0; Ib < tot; Ib++)
 	{
@@ -298,10 +311,14 @@ VectorXd DFCI::_Hx_ (MatrixXd& b, int col)
 			for (Jb = 0; Jb < cstr2.itot; Jb++)
 			{
 				ij = cstr2.cmpind[Jb];
-				F(cstr2.istr[Jb]) += cstr.sgn[Kb] * cstr2.sgn[Jb] * V[cpind(ij,kl)];
+				F(cstr2.istr[Jb]) += cstr.sgn[Kb] * cstr2.sgn[Jb] * V[cpind(ij,kl)] / 2.;
 			}
 		}
-		for (Ia = 0; Ia < tot; Ia++)	sigma_1(Ia, Ib) = C.row(Ia) * F;
+		for (Ia = 0; Ia < tot; Ia++)	
+		{
+			sigma_1(Ia, Ib) += C.row(Ia) * F;
+			sigma_1(Ib, Ia) += F.transpose () * C.col(Ia);
+		}
 	}
 
 	// forming sigma_3
@@ -327,7 +344,7 @@ VectorXd DFCI::_Hx_ (MatrixXd& b, int col)
 	}
 
 	// convert matrix sigma to vector s
-	MatrixXd sigma = sigma_1 * 2. + sigma_3;
+	MatrixXd sigma = sigma_1 + sigma_3;
 	VectorXd s (tot * tot);
 	for (Ia = 0; Ia < tot; Ia++)
 		for (Ib = 0; Ib < tot; Ib++)
@@ -347,6 +364,7 @@ void DFCI::_dfci_ ()
 	double lambda = At(0, 0);
 	VectorXd alpha (1);	alpha (0) = 1.;
 	VectorXd diagH = _diagH_ ();
+	cout << "diagH:\n" << diagH << endl << endl;
 
 	// Davidson iteration (see Davidson ref above)
 	int iter = 1, i;
