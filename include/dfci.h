@@ -399,9 +399,6 @@ void DFCI::_dfci_ ()
 		b.conservativeResize (tot * tot, iter + 1);	b.col(iter) = q;
 		s.conservativeResize (tot * tot, iter + 1);	s.col(iter) = _Hx_ (b, iter);
 
-		//check
-		//cout << "( " << b.rows() << ", " << b.cols() << " )" << "\n\n";
-
 		// form tilde{A}
 		At.conservativeResize (iter + 1, iter + 1);
 		for (i = 0; i < iter; i++)	At(i, iter) = At(iter, i) = b.col(i).transpose () * s.col(iter);
