@@ -376,7 +376,7 @@ void DFCI::_dfci_ ()
 	// Davidson iteration (see Davidson ref above)
 	int iter = 1, i;
 	VectorXd q (tot * tot), precond (tot * tot);
-	double temp;
+	double temp, offset;
 	cout << "iter\terror" << endl;
 	while (iter < MAX_DVDS_ITER)
 	{
@@ -385,7 +385,8 @@ void DFCI::_dfci_ ()
 		else	cout << iter << "\t" << q.norm () << "\n";
 
 		// offset preconditioner to avoid singularity
-		precond = VectorXd::Constant (tot * tot, lambda + 1e-15) - diagH;
+		if (iter < 3)	offset = 1e-14;	else	offset = 0.;
+		precond = VectorXd::Constant (tot * tot, lambda + offset) - diagH;
 		//cout << "q(0) = " << q(0) << "\tprec(0) = " << precond(0) << "\n\n";
 		q = q.cwiseQuotient (precond);
 

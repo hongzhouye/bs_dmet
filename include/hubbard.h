@@ -126,9 +126,11 @@ double HUBBARD::_get_E_ ()
 	Etot += -2. * (P (0, K - 1) + P (K - 1, 0)) + U * n (K - 1) * n (K - 1);
 	*/
 
-	for (mu = 0; mu < N; mu++)	Etot += e(mu);
+	/*for (mu = 0; mu < N; mu++)	Etot += e(mu);
 	Etot *= 2.;
-	Etot -= U * (n.cwiseProduct (n)).sum ();
+	Etot -= U * (n.cwiseProduct (n)).sum ();*/
+
+	Etot = ((h + F) * P).trace ();
 
 	return Etot;
 }
