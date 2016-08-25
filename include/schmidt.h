@@ -25,7 +25,7 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 	int i;
 
 	// prefix 'r' for raw (i.e. untransformed)
-	MatrixXd rCF;		
+	MatrixXd rCF;
 	rCF = hub.C.block (0, 0, Nimp, N);
 
 	MatrixXd M;
