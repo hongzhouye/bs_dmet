@@ -15,6 +15,7 @@ class HRED
 		MatrixXd h;
 		double *V;
 		void _xform_ (HUBBARD&, SCHMIDT&);
+		void _write_ ();
 };
 
 void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
@@ -24,18 +25,18 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 
 	// Environment's contribution to himp
 	MatrixXd hc = ((sm.TE * sm.TE.transpose ()).diagonal () * hub.U).asDiagonal ();
-	cout << "TE * TE^T:\n" << sm.TE * sm.TE.transpose () << "\n\n";
+	/*cout << "TE * TE^T:\n" << sm.TE * sm.TE.transpose () << "\n\n";
 	cout << "hc:\n" << hc << "\n\n";
-	cout << "hc-transformed:\n" << T.transpose () * hc * T << "\n\n";
+	cout << "hc-transformed:\n" << T.transpose () * hc * T << "\n\n";*/
 
 	// himp
 	h = T.transpose () * (hub.h + hc) * T;
-	cout << "test:\n" << T.transpose () * hub.h * T << "\n\n";
+	//cout << "test:\n" << T.transpose () * hub.h * T << "\n\n";
 
-	cout << "himp :\n" << h << "\n\n";
+	//cout << "himp :\n" << h << "\n\n";
 
 	// Vimp
-	Ni = 2 * sm.Nimp;	
+	Ni = 2 * sm.Nimp;
 	V = _darray_gen_ (Ni * Ni * Ni * Ni);
 	for (i = 0; i < Ni; i++)
 		for (j = i; j < Ni; j++)
@@ -43,10 +44,10 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 				for (l = k; l < Ni; l++)
 				{
 					for (mu = 0; mu < hub.K; mu++)
-						V[index4(i,j,k,l,Ni)] += T (mu, i) * T (mu, j) * 
+						V[index4(i,j,k,l,Ni)] += T (mu, i) * T (mu, j) *
 							T (mu, k) * T (mu, l);
 					V[index4(i,j,k,l,Ni)] *= hub.U;
-					V[index4(i,j,l,k,Ni)] = V[index4(i,k,j,l,Ni)] = V[index4(i,k,l,j,Ni)] = 
+					V[index4(i,j,l,k,Ni)] = V[index4(i,k,j,l,Ni)] = V[index4(i,k,l,j,Ni)] =
 						V[index4(i,l,j,k,Ni)] = V[index4(i,l,k,j,Ni)] = V[index4(j,i,k,l,Ni)] =
 						V[index4(j,i,l,k,Ni)] = V[index4(j,k,i,l,Ni)] = V[index4(j,k,l,i,Ni)] =
 						V[index4(j,l,i,k,Ni)] = V[index4(j,l,k,i,Ni)] = V[index4(k,i,j,l,Ni)] =
@@ -55,6 +56,16 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 						V[index4(l,i,k,j,Ni)] = V[index4(l,j,i,k,Ni)] = V[index4(l,j,k,i,Ni)] =
 						V[index4(l,k,i,j,Ni)] = V[index4(l,k,j,i,Ni)] = V[index4(i,j,k,l,Ni)];
 				}
+
+	// brute-force
+	/*for (i = 0; i < Ni; i++)
+		for (j = 0; j < Ni; j++)
+			for (k = 0; k < Ni; k++)
+				for (l = 0; l < Ni; l++)
+					for (mu = 0; mu < hub.K; mu++)
+						V[index4(i,j,k,l,Ni)] += T (mu, i) * T (mu, j) *
+							T (mu, k) * T (mu, l) * hub.U;
+	*/
 
 	// check Vimp
 	/*for (i = 0; i < Ni; i++)
@@ -70,6 +81,21 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 			printf ("\n");
 		}
 	*/
+}
+
+void HRED::_write_ ()
+{
+	int i, j, k, l;
+	FILE *ph = fopen ("h", "w+");
+	FILE *pV = fopen ("V", "w+");
+	for (i = 0; i < Ni; i++)
+		for (j = 0; j < Ni; j++)
+		{
+			fprintf (ph, "%d;%d;%18.16f\n", i, j, h(i, j));
+			for (k = 0; k < Ni; k++)
+				for (l = 0; l < Ni; l++)
+					fprintf (pV, "%d;%d;%d;%d;%18.16f\n", i, j, k, l, V[index4(i,j,k,l,Ni)]);
+		}
 }
 
 #endif

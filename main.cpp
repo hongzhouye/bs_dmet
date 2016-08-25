@@ -29,11 +29,13 @@ int main (int argc, char * argv[])
 	// Construct Hred
 	HRED hr;
 	hr._xform_ (hub, sm);
+	hr._write_ ();
 
 	// FCI on fragment
 	DFCI dfci;
 	dfci._init_ (hr);
-	cout << "FCI initialization succeeds!\n";
+	cout << "FCI initialization succeeds!\n" << dfci.tot <<
+		" alpha strings are generated!\n\n";
 	dfci._dfci_ ();
 	return 0;
 }

@@ -69,7 +69,7 @@ void HUBBARD::_build_F_ ()
 double HUBBARD::_error_ ()
 {
 	MatrixXd err;
-	err = F * P - P * F;		
+	err = F * P - P * F;
 
 	return err.norm () / K;
 }
@@ -77,7 +77,7 @@ double HUBBARD::_error_ ()
 // solve the Hubbard model for the translational symmetric case
 void HUBBARD::_hubbard_general_ ()
 {
-	// initialization 
+	// initialization
 	_init_ ();
 
 	VectorXd nnew;
@@ -94,16 +94,16 @@ void HUBBARD::_hubbard_general_ ()
 		erc = _error_ ();
 
 		// diagonalizing F
-		_eigh_ (F, C, e);	
+		_eigh_ (F, C, e);
 		P = C * occ * C.transpose ();	nnew = P.diagonal ();
 
 		er = (n - nnew).norm ();
 		iter ++;
-		printf ("%4d\t%.3e\t%.3e\n", iter, er, erc);	
+		printf ("%4d\t%.3e\t%.3e\n", iter, er, erc);
 
 		if (er < SCF_CONV)
 		{
-			cout << "SCF converges in " << iter << " cycles.\n\n";
+			cout << "\nSCF converges in " << iter << " cycles.\n\n";
 			break;
 		}
 		else
@@ -121,9 +121,14 @@ double HUBBARD::_get_E_ ()
 {
 	int mu, nu;
 	double Etot = 0.;
-	for (mu = 0; mu < K - 1; mu++)
+	/*for (mu = 0; mu < K - 1; mu++)
 		Etot += -2. * (P (mu, mu + 1) + P (mu + 1, mu)) + U * n (mu) * n (mu);
 	Etot += -2. * (P (0, K - 1) + P (K - 1, 0)) + U * n (K - 1) * n (K - 1);
+	*/
+
+	for (mu = 0; mu < N; mu++)	Etot += e(mu);
+	Etot *= 2.;
+	Etot -= U * (n.cwiseProduct (n)).sum ();
 
 	return Etot;
 }

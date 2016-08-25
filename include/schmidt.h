@@ -32,6 +32,9 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 	M = rCF.transpose () * rCF;
 
 	_eigh_ (M, W, d);	_revert_ (W, d);
+	cout << "M:\n" << M << "\n\n";
+	cout << "W:\n" << W << "\n\n";
+	cout << "d:\n" << d << "\n\n";
 
 	C = hub.C.block (0, 0, K, N) * W;
 

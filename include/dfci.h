@@ -385,8 +385,8 @@ void DFCI::_dfci_ ()
 		else	cout << iter << "\t" << q.norm () << "\n";
 
 		// offset preconditioner to avoid singularity
-		precond = VectorXd::Constant (tot * tot, lambda) - diagH +
-			VectorXd::Constant (tot * tot, 1e-15);
+		precond = VectorXd::Constant (tot * tot, lambda + 1e-15) - diagH;
+		//cout << "q(0) = " << q(0) << "\tprec(0) = " << precond(0) << "\n\n";
 		q = q.cwiseQuotient (precond);
 
 		// Schmidt orthonormalization
@@ -420,7 +420,7 @@ void DFCI::_dfci_ ()
 		return;
 	}
 
-	cout << "\nDesired accuracy is reached after " << iter << "iterations!\n\n";
+	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
 	MatrixXd v = b * alpha;
 	cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
 	printf ("FCI energy is %18.16f\n\n", lambda);
