@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cstdlib>
+#include <Eigen/Dense>
 #include "include/hf.h"
+#include "include/dmet.h"
+#include "include/dmetE.h"
 #include "include/hubbard.h"
 #include "include/schmidt.h"
 #include "include/hred.h"
@@ -9,6 +12,7 @@
 #include "include/read.h"
 
 using namespace std;
+using namespace Eigen;
 
 int main (int argc, char * argv[])
 {
@@ -35,6 +39,10 @@ int main (int argc, char * argv[])
 	// SCF on Hred, for CHECK
 	SCF hred_scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
 	hred_scf._scf_ ();
+
+	DMET dmet;
+	printf ("HF-in-HF embedding energy: %18.16f\n\n",
+		dmet._dmet_energy_ (hred_scf.h, hred_scf.V, hred_scf.P, hred_scf.N));
 
 	// FCI on fragment
 	DFCI dfci;

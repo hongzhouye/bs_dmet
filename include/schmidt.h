@@ -34,9 +34,9 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 	M = rCF.transpose () * rCF;
 
 	_eigh_ (M, W, d);	_revert_ (W, d);
-	cout << "M:\n" << M << "\n\n";
-	cout << "W:\n" << W << "\n\n";
-	cout << "d:\n" << d << "\n\n";
+	//cout << "M:\n" << M << "\n\n";
+	//cout << "W:\n" << W << "\n\n";
+	cout << "Eigenvalues of the projection matrix:\n" << d.transpose () << "\n\n";
 
 	C = hub.C.leftCols (N) * W;
 	cout << "Schmidt decomposed C:\n" << C << "\n\n";
