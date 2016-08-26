@@ -7,38 +7,32 @@
 using namespace std;
 using namespace Eigen;
 
-class Matdeq 
+class Matdeq
 {
   public:
 	int max_size, now, full_flag;
-	Matdeq ();
-	Matdeq (int);
-	MatrixKd * element;
-	void allocate (void);
-	void append (MatrixKd &);
+	MatrixXd *element;
+	void _init_ (int);
+	void allocate (int);
+	void append (MatrixXd&);
 	void print (void);
 };
 
-Matdeq::Matdeq (void)
-{
-	max_size = 5;
-	now = 0;
-	full_flag = 0;
-}
-
-Matdeq::Matdeq (int n)
+void Matdeq::_init_ (int n)
 {
 	max_size = n;
 	now = 0;
 	full_flag = 0;
 }
 
-void Matdeq::allocate (void)
+void Matdeq::allocate (int K)
 {
-	element = new MatrixKd [max_size];
+	element = new MatrixXd [max_size];
+    int i = 0;
+    for (i = 0; i < max_size; i++)  element[i].setZero (K, K);
 }
 
-void Matdeq::append (MatrixKd& a)
+void Matdeq::append (MatrixXd& a)
 {
 	element[now] = a;
 	if (full_flag == 0 && now == max_size - 1)
@@ -57,4 +51,4 @@ void Matdeq::print (void)
 		cout << element[i] << endl << endl;
 }
 
-#endif 
+#endif

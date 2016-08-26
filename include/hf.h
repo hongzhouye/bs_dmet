@@ -9,9 +9,6 @@ using namespace std;
 
 #define SCF_ITER 1E3
 #define SCF_CONV 1E-6
-#define MAX_DIIS 10
-#define PINV_TOL 1E-10
-#define LINSOLVER_TOL 1E-4
 #define mixing_beta_HL 0.2
 #define ZERO 1E-14
 

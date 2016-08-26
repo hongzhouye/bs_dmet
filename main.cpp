@@ -4,6 +4,7 @@
 #include "include/hubbard.h"
 #include "include/schmidt.h"
 #include "include/hred.h"
+#include "include/scf.h"
 #include "include/dfci.h"
 #include "include/read.h"
 
@@ -30,6 +31,10 @@ int main (int argc, char * argv[])
 	HRED hr;
 	hr._xform_ (hub, sm);
 	hr._write_ ();
+
+	// SCF on Hred, for CHECK
+	SCF hred_scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
+	hred_scf._scf_ ();
 
 	// FCI on fragment
 	DFCI dfci;

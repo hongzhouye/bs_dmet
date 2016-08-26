@@ -9,6 +9,27 @@
 using namespace std;
 using namespace Eigen;
 
+#define MAX_DIIS 10
+#define PINV_TOL 1E-10
+#define LINSOLVER_TOL 1E-4
+
+class DIIS
+{
+	private:
+		MatrixXd _pinv_ (MatrixXd&);
+		double _lin_solver_ (MatrixXd&, const MatrixXd&, VectorXd&, string);
+	public:
+		Matdeq Fs, errs;
+		void _diis_init_ (int);
+		MatrixXd _next_diis_rhf_ ();
+};
+
+void DIIS::_diis_init_ (int K)
+{
+	Fs._init_ (MAX_DIIS);	Fs.allocate (K);
+	errs._init_ (MAX_DIIS);	errs.allocate (K);
+}
+
 // MP pseudo-inverse solver for a real symmetric matrix B
 // by first eigenvalue-decomposing it into U * S * U'
 // then deleting small eigen-components i if
@@ -19,7 +40,7 @@ using namespace Eigen;
 //			 pinv(B) = u * (s)^(-1) * u'
 //
 // where u and s are truncated U and S.
-MatrixXd _pinv_ (MatrixXd& B)
+MatrixXd DIIS::_pinv_ (MatrixXd& B)
 {
 	int i, j;
 	SelfAdjointEigenSolver<MatrixXd> es;
@@ -27,7 +48,7 @@ MatrixXd _pinv_ (MatrixXd& B)
 	MatrixXd U0 = es.eigenvectors();
 	VectorXd S0 = es.eigenvalues();
 	//cout << "eigenvalues:" << endl << S0 << endl << endl;
-	
+
 	double max, min, temp;
 	int flag = 1, nrow = S0.size(), last;
 	VectorXd u_tmp (nrow);
@@ -65,7 +86,7 @@ MatrixXd _pinv_ (MatrixXd& B)
 //
 //			B * x = b
 // for x and returning the relative error |B * x - b| / |b|.
-double _lin_solver_ (MatrixXd& B, const MatrixXd& b, 
+double DIIS::_lin_solver_ (MatrixXd& B, const MatrixXd& b,
 		VectorXd& x, string method)
 {
 	if (method == "cpqr")
@@ -91,61 +112,41 @@ double _lin_solver_ (MatrixXd& B, const MatrixXd& b,
 }
 
 // diis
-void _next_diis_ (Matdeq& errs, Matdeq& Fs, 
-		Matdeq& errbs, Matdeq& Fbs)
+MatrixXd DIIS::_next_diis_rhf_ ()
 {
-	int n = (Fs.full_flag) ? (Fs.max_size) : (Fs.now);	
-	double error;
+	int n = (Fs.full_flag) ? (Fs.max_size) : (Fs.now);
+	int K = Fs.element[0].rows ();
 
 	// Construct B matrix and b rhs vector (Helgaker 10.6.28)
 	MatrixXd B = MatrixXd::Constant (n+1, n+1, -1.);
 	int i, j;
 	for (i = 0; i < n; i++)
 		for (j = 0; j < n; j++)
-			B(i, j) = (errs.element[i].cwiseProduct(errs.element[j])).sum()
-					+ (errbs.element[i].cwiseProduct(errbs.element[j])).sum();
+			B(i, j) = (errs.element[i].cwiseProduct(errs.element[j])).sum();
 	B(n, n) = 0;
 	VectorXd b = VectorXd::Constant (n + 1, 0);
 	b(n) = -1.;
 
 	// Solve B * x = b for x
 	VectorXd x;
-	error = _lin_solver_ (B, b, x, "cpqr");
-	if (error > LINSOLVER_TOL)
-	{	
-		cout << "CPQR error = " << error << endl;
-		cout << "CPQR fails, switch to FPQR ..." << endl;
-		error = _lin_solver_ (B, b, x, "fpqr");
-		if (error > LINSOLVER_TOL)
-		{	
-			cout << "FPQR error = " << error << endl;
-			cout << "FPQR fails, switch to FPLU ..." << endl;
-			error = _lin_solver_ (B, b, x, "fplu");
-			if (error > LINSOLVER_TOL)
-			{	
-				cout << "FPLU error = " << error << endl;
-				cout << "FPLU fails, switch to PINV ..." << endl;
-				error = _lin_solver_ (B, b, x, "pinv");
-				if (error > LINSOLVER_TOL)
+	if (_lin_solver_ (B, b, x, "cpqr") > LINSOLVER_TOL)
+		if (_lin_solver_ (B, b, x, "fpqr") > LINSOLVER_TOL)
+			if (_lin_solver_ (B, b, x, "fplu") > LINSOLVER_TOL)
+				if (_lin_solver_ (B, b, x, "pinv") > LINSOLVER_TOL)
 				{
-					cout << "PINV error = " << error << endl;
 					cout << "B matrix is drastically singular!\n" <<
 						"Linear Solver does not work!\n";
 					exit (1);
 				}
-			}
-		}
-	}
 
 	// Construct new F
 	x.conservativeResize(n);
-	Fs.element[Fs.now].setZero ();
-	Fbs.element[Fbs.now].setZero ();
+	MatrixXd Fnew;	Fnew.setZero (K, K);
 	for (i = 0; i < n; i++)
-	{
-		Fs.element[Fs.now] += x(i) * Fs.element[i];
-		Fbs.element[Fbs.now] += x(i) * Fbs.element[i];
-	}
+		Fnew += x(i) * Fs.element[i];
+
+
+	return Fnew;
 }
 
 #endif
