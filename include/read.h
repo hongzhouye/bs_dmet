@@ -7,6 +7,7 @@
 #include <cctype>
 #include <functional>
 #include <string>
+#include "hf.h"
 #include "hubbard.h"
 #include "schmidt.h"
 
@@ -27,6 +28,7 @@ string _uppercase_ (const string& s)
 
 void _read_ (char * fname, HUBBARD& hub, SCHMIDT& sm)
 {
+	int i;
 	string line;
 	ifstream input (fname);
 	if (input)	// same as: if (input.good ())
@@ -43,6 +45,12 @@ void _read_ (char * fname, HUBBARD& hub, SCHMIDT& sm)
 			else if (_uppercase_ (line) == "SCHMIDT")
 			{
 				getline (input, line);	sm.Nimp = stoi (line);
+				sm.frag = _iarray_gen_ (sm.Nimp);
+				for (i = 0; i < sm.Nimp; i++)
+				{
+					getline (input, line);
+					sm.frag[i] = stoi (line);	// set site
+				}
 				sm.K = hub.K; sm.N = hub.N;
 			}
 		}

@@ -21,7 +21,7 @@ int main (int argc, char * argv[])
 	else	{cout << "Too many input files!\n";	exit (1);}
 
 	// Hubbard Hartree-Fock calculation
-	hub._hubbard_general_ ();
+	hub._hubbard_rhf_ ();
 	hub._print_ ();
 
 	// Schmidt

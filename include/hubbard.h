@@ -27,7 +27,7 @@ class HUBBARD
 		void _init_ ();
 		void _build_F_ ();
 		double _error_ ();
-		void _hubbard_general_ ();
+		void _hubbard_rhf_ ();
 		double _get_E_ ();
 		void _print_ ();
 };
@@ -75,7 +75,8 @@ double HUBBARD::_error_ ()
 }
 
 // solve the Hubbard model for the translational symmetric case
-void HUBBARD::_hubbard_general_ ()
+// restricted spin symmetry is assumed
+void HUBBARD::_hubbard_rhf_ ()
 {
 	// initialization
 	_init_ ();

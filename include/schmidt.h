@@ -11,7 +11,7 @@ class SCHMIDT
 {
 	public:
 		int K, N, Nimp;
-		int start_row;
+		int *frag;
 		MatrixXd W;				// M = W * d * W^T
 		VectorXd d;				// Singular values
 		MatrixXd C;				// W-transformed C's
@@ -24,11 +24,11 @@ class SCHMIDT
 void SCHMIDT::_schmidt_ (HUBBARD& hub)
 {
 	int i;
-	start_row = 0;
 
 	// prefix 'r' for raw (i.e. untransformed)
-	MatrixXd rCF;
-	rCF = hub.C.block (start_row, 0, Nimp, N);
+	MatrixXd rCF;	rCF.setZero (Nimp, N);
+	for (i = 0; i < Nimp; i++)
+		rCF.row (i) = hub.C.block (frag[i], 0, 1, N);
 
 	MatrixXd M;
 	M = rCF.transpose () * rCF;
@@ -40,23 +40,25 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 
 	C = hub.C.leftCols (N) * W;
 	cout << "Schmidt decomposed C:\n" << C << "\n\n";
-	for (i = 0; i < Nimp; i++)
-	{
-		C.block (start_row, i, Nimp, 1) /= sqrt(d (i));
-		C.block (0, i, start_row, 1) /= sqrt (1. - d (i));
-		C.block (start_row + Nimp, i, K - Nimp - start_row, 1) /= sqrt (1. - d (i));
-	}
 
 	_form_xform_mat_ ();
 }
 
 void SCHMIDT::_form_xform_mat_ ()
 {
+	int i = 0;
 	T.setZero (K, 2 * Nimp);
-	T.block (start_row, 0, Nimp, Nimp) = C.block (start_row, 0, Nimp, Nimp);
-	T.block (0, Nimp, start_row, Nimp) = C.block (0, 0, start_row, Nimp);
-	T.block (start_row + Nimp, Nimp, K - Nimp - start_row, Nimp) = C.block (start_row + Nimp, 0, K - Nimp - start_row, Nimp);
-	TE = C.topRightCorner (K, N - Nimp);
+	T.rightCols (Nimp) = C.leftCols (Nimp);
+
+	// normalization
+	for (i = 0; i < Nimp; i++)	T.col (i + Nimp) /= sqrt (1. - d(i));
+	for (i = 0; i < Nimp; i++)
+	{
+		T.block (frag[i], 0, 1, 2 * Nimp).setZero ();
+		T(frag[i], i) = 1.;		// set C^{F} to eye(Nimp)
+								// see Knizia13JCTC
+	}
+	TE = C.rightCols (N - Nimp);
 
 	cout << "C:\n" << C << "\n\n";
 	cout << "T:\n" << T << "\n\n";

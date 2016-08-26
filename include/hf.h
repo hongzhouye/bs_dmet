@@ -12,7 +12,7 @@ using namespace std;
 #define mixing_beta_HL 0.2
 #define ZERO 1E-14
 
-#define esXd SelfAdjointEigenSolver<MatrixXd> 
+#define esXd SelfAdjointEigenSolver<MatrixXd>
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 
 // eigen solver for Hermitian matrix
@@ -52,6 +52,20 @@ double * _darray_gen_ (int size)
 		exit (1);
 	}
 	for (i = 0; i < size; i++)	p[i] = 0.;
+	return p;
+}
+
+// generate int type array
+int *_iarray_gen_ (int size)
+{
+	int i;
+	int * p = new int[size];
+	if (p == NULL)
+	{
+		cout << "Allocate memory error!\n";
+		exit (1);
+	}
+	for (i = 0; i < size; i++)	p[i] = 0;
 	return p;
 }
 
