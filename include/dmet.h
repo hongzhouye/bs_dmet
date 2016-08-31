@@ -61,7 +61,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                 }
         }
 
-    for (mu = 0; mu < K; mu++)
+    for  (mu = 0; mu < K; mu++)
         for (nu = 0; nu < N; nu++)
         {
             mn = cpind(mu,nu);
