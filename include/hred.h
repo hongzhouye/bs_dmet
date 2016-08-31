@@ -33,7 +33,7 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 	h = T.transpose () * (hub.h + hc) * T;
 	//cout << "test:\n" << T.transpose () * hub.h * T << "\n\n";
 
-	//cout << "himp :\n" << h << "\n\n";
+	cout << "himp :\n" << h << "\n\n";
 
 	// Vimp
 	Ni = 2 * sm.Nimp;
@@ -57,7 +57,7 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 						V[index4(l,k,i,j,Ni)] = V[index4(l,k,j,i,Ni)] = V[index4(i,j,k,l,Ni)];
 				}
 	*/
-	int lenh = K * (K + 1) / 2, lenV = lenh * (lenh + 1) / 2;
+	int lenh = Ni * (Ni + 1) / 2, lenV = lenh * (lenh + 1) / 2;
 	V = _darray_gen_ (lenV);
 	for (i = 0; i < Ni; i++)
 		for (j = 0; j <= i; j++)
@@ -66,11 +66,11 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 			for (k = 0; k < Ni; k++)
 				for (l = 0; l <= k; l++)
 				{
-					kl = cpind(k,l)
+					kl = cpind(k,l);
 					if (kl <= ij)
 					{
-						ijkl = cpind(ij,kl)
-						for (mu = 0; mu < hub.K; mu++)	V[ijkl] += T(mu, i) * T(mu, j) * T(mu, k) * T(mu, l);
+						ijkl = cpind(ij,kl);
+						for (mu = 0; mu < hub.K; mu++)	V[ijkl] += T(mu, i) * T(mu, k) * T(mu, l) * T(mu, l);
 						V[ijkl] *= hub.U;
 					}
 				}

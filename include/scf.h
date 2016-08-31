@@ -48,9 +48,10 @@ SCF::SCF (MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
 {
     K = Nbs;    N = Ne;
     h.setZero (K, K);   h = hinp;
-    int K4 = K * K; K4 = K4 * K4;
-    V = _darray_gen_ (K4);
-    for (int i = 0; i < K4; i++)    V[i] = Vinp[i];
+    int lenh = K * (K + 1) / 2;
+    int lenV = lenh * (lenh + 1) / 2;
+    V = _darray_gen_ (lenV);
+    for (int i = 0; i < lenV; i++)    V[i] = Vinp[i];
 
     // diis and rca default: ON
     diis = 1;   rca = 1;
@@ -61,9 +62,10 @@ SCF::SCF (MatrixXd& hinp, double *Vinp, int Nbs, int Ne, int idiis, int irca)
 {
     K = Nbs;    N = Ne;
     h.setZero (K, K);   h = hinp;
-    int K4 = K * K; K4 = K4 * K4;
-    V = _darray_gen_ (K4);
-    for (int i = 0; i < K4; i++)    V[i] = Vinp[i];
+    int lenh = K * (K + 1) / 2;
+    int lenV = lenh * (lenh + 1) / 2;
+    V = _darray_gen_ (lenV);
+    for (int i = 0; i < lenV; i++)    V[i] = Vinp[i];
 
     // scf acceleration
     diis = idiis;   rca = irca;
@@ -87,16 +89,25 @@ void SCF::_init_ ()
 void SCF::_fock_ ()
 {
     MatrixXd G; G.setZero (K, K);
-    int mu, nu, la, si;
+    int mu, nu, la, si, mn, ms, ls, ln;
 
 	for (nu = 0; nu < K; nu++)
 		for (mu = 0; mu < K; mu++)
-			for (la = 0; la < K; la++)
-				for (si = 0; si < K; si++)
+        {
+            mn = cpind(mu,nu);
+            for (si = 0; si < K; si++)
+            {
+                ms = cpind(mu,si);
+                for (la = 0; la < K; la++)
+                {
+                    ls = cpind(la,si);
+                    ln = cpind(la,nu);
 					G(mu, nu) += P(si, la) * (2. *
-							V[index4(mu,la,nu,si,K)] -
-							V[index4(mu,la,si,nu,K)]);
-
+							V[cpind(mn,ls)] -
+							V[cpind(ms,ln)]);
+                }
+            }
+        }
 	F = G + h;
 }
 
@@ -121,7 +132,7 @@ void SCF::_scf_ ()
     MatrixXd err;   err.setZero (K, K);
     DIIS Diis;  Diis._diis_init_ (K);
 
-    // CHECK 
+    // CHECK
     //cout << "h:\n" << h << "\n\n";
     //cout << "P:\n" << P << "\n\n";
 

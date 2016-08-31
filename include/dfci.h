@@ -116,7 +116,8 @@ void DFCI::_init_ (HRED& hr)
 	for (i = 1; i < lenh + 1; i++)	ioff[i] = ioff[i - 1] + i;*/
 
 	// set up h and V
-	int max = 0;
+	int ik, kj;
+	for (i = 0; i < lenV; i++)	V[i] = hr.V[i];
 	for (i = 0; i < K; i++)
 		for (j = 0; j <= i; j++)
 		{
@@ -124,15 +125,17 @@ void DFCI::_init_ (HRED& hr)
 			h[ij] = hr.h (i, j);
 			for (k = 0; k < K; k++)
 			{
-				h[ij] -= hr.V[index4(i,k,k,j,K)] / 2.;
-				for (l = 0; l <= k; l++)
+				ik = cpind(i,k);
+				kj = cpind(k,j);
+				h[ij] -= V[cpind(ik,kj)] / 2.;
+				/*for (l = 0; l <= k; l++)
 				{
 					kl = cpind(k,l);
 					if (kl > ij)	continue;
 					ijkl = cpind(ij,kl);
 					// physicists' notation to chemists' notation!
 					V[ijkl] = hr.V[index4(i,k,j,l,K)];
-				}
+				}*/
 			//printf("%d;%d;%10.7f\n", i, j, h[ij]);
 			}
 		}
