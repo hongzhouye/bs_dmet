@@ -11,7 +11,6 @@
 using namespace Eigen;
 using namespace std;
 
-#define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
 #define MAX_DVDS_ITER 100
 #define DVDS_CONV 1e-8
 
@@ -21,7 +20,6 @@ using namespace std;
 class DFCI
 {
 	private:
-		int *ioff;		// lookup table for compound indices
 		int _str_match_ (short *, short *, short *);
 		void _str_gen_ (AB_STRING *, int, int, long int *);
 		void _dfci_initguess_ (MatrixXd&, string);
@@ -31,14 +29,19 @@ class DFCI
 		int K;			// basis set size
 		int N;			// # of e^-
 		long int tot;	// total # of configurations
+		double E_fci;
+		MatrixXd C_fci;	// expansion coefficients
 		double *h;		// reduced one-electron integrals
 		double *V;		// two electron integrals
-		MatrixXd G;		// Davidson matrix
+		MatrixXd P;		// 1PDM
+		double *G;		// 2PDM
 		AB_STRING *astr;// only one is enough for Ms = 0
 						// and spin-restricted case
 						// see the FCI ref above
 		void _init_ (HRED&);
 		void _dfci_ ();
+		void _1PDM_ ();
+		void _2PDM_ ();
 };
 
 int DFCI::_str_match_ (short *a, short *b, short *sgn)
@@ -103,14 +106,14 @@ void DFCI::_init_ (HRED& hr)
 	V = _darray_gen_ (lenV);
 
 	// set up the lookup table 'ioff'
-	ioff = new int [lenh + 1];
+	/*ioff = new int [lenh + 1];
 	if (ioff == NULL)
 	{
 		cout << "failed to malloc memory for array ioff!\n";
 		exit (1);
 	}
 	ioff[0] = 0;
-	for (i = 1; i < lenh + 1; i++)	ioff[i] = ioff[i - 1] + i;
+	for (i = 1; i < lenh + 1; i++)	ioff[i] = ioff[i - 1] + i;*/
 
 	// set up h and V
 	int max = 0;
@@ -200,9 +203,11 @@ void DFCI::_init_ (HRED& hr)
 			printf ("( %ld, %d, %d )\n", astr[I].istr[i],
 					astr[I].sgn[i], astr[I].cmpind[i]);
 		cout << "\n\n";
-	}*/
+	}
+	*/
 }
 
+// davidson
 void DFCI::_dfci_initguess_ (MatrixXd& b, string mode)
 {
 	if (mode == "random")		b.setRandom ();
@@ -422,11 +427,152 @@ void DFCI::_dfci_ ()
 	}
 
 	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
-	MatrixXd v = b * alpha;
+	MatrixXd v = b * alpha;	C_fci = v;
 	cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
 	printf ("FCI energy is %18.16f\n\n", lambda);
 
 	iter ++;
 }
 
+// post-process
+void DFCI::_1PDM_ ()
+{
+	P.setZero (K, K);
+
+	AB_STRING cstr;
+
+	int mu, nu, pos, mn, mnp;
+	long int Ia, Ja, Ib;
+	for (Ib = 0; Ib < tot; Ib++)
+		for (Ja = 0; Ja < tot; Ja++)
+		{
+			cstr = astr[Ja];
+			for (pos = 0; pos < cstr.itot; pos++)
+			{
+				Ia = cstr.istr[pos];
+				mn = cstr.cmpind[pos];
+				for (mu = 0; mu < K; mu++)
+					for (nu = 0; nu < K; nu++)
+					{
+						mnp = cpind(mu, nu);
+						if (mn == mnp)
+						{
+							P(mu, nu) += (C_fci(Ia * tot + Ib, 0) *
+								C_fci(Ja * tot + Ib, 0)
+								//+ C_fci(Ib * tot + Ia, 0) *
+								//C_fci(Ib * tot + Ja, 0)
+							) * cstr.sgn[pos];
+						}
+					}
+			}
+		}
+}
+
+void DFCI::_2PDM_ ()
+{
+	int K4 = K * K;	K4 = K4 * K4;
+	G = _darray_gen_ (K4);
+
+	AB_STRING cstr, cstr2;
+	int mu, nu, la, si, pos, pos2;
+	int ns, nsp, ml, mlp, ms, msp;		// compound indices
+	long int Ia, Ib, Ja, Jb, Ka;
+
+	for (Ib = 0; Ib < tot; Ib++)
+		for (Ja = 0; Ja < tot; Ja++)
+		{
+			cstr = astr[Ja];
+			for (pos = 0; pos < cstr.itot; pos++)
+			{
+				Ka = cstr.istr[pos];
+				ns = cstr.cmpind[pos];
+				for (nu = 0; nu < K; nu++)
+					for (si = 0; si < K; si++)
+						if (cpind(nu,si) == ns)
+						{
+							cstr2 = astr[Ka];
+							for (pos2 = 0; pos2 < cstr2.itot; pos2++)
+							{
+								Ia = cstr2.istr[pos2];
+								ml = cstr2.cmpind[pos2];
+								for (mu = 0; mu < K; mu++)
+									for (la = 0; la < K; la++)
+										if (cpind(mu,la) == ml)
+										{
+											G[index4(mu,nu,la,si,K)] +=
+												cstr.sgn[pos] * cstr2.sgn[pos2] *
+												(C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Ib)
+												+ C_fci(Ib * tot + Ia) * C_fci(Ib * tot + Ja)
+											) / 2.;
+											//G[index4(mu,nu,la,si,K)] /= 2.;
+										}
+							}
+						}
+			}
+		}
+
+	for (Ja = 0; Ja < tot; Ja++)
+	{
+		cstr = astr[Ja];
+		for (pos = 0; pos < cstr.itot; pos++)
+		{
+			Ia = cstr.istr[pos];
+			ml = cstr.cmpind[pos];
+			for (mu = 0; mu < K; mu++)
+				for (la = 0; la < K; la++)
+					if (cpind(mu,la) == ml)
+					{
+						for (Jb = 0; Jb < tot; Jb++)
+						{
+							cstr2 = astr[Jb];
+							for (pos2 = 0; pos2 < cstr2.itot; pos2++)
+							{
+								Ib = cstr2.istr[pos];
+								ns = cstr2.cmpind[pos];
+								for (nu = 0; nu < K; nu++)
+									for (si = 0; si < K; si++)
+									{
+										if (cpind(nu,si) == ns)
+										{
+											G[index4(mu,nu,la,si,K)] += cstr.sgn[pos] * cstr2.sgn[pos2] * C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Jb);
+										}
+									}
+							}
+						}
+					}
+		}
+	}
+
+	for (Ib = 0; Ib < tot; Ib++)
+		for (Ja = 0; Ja < tot; Ja++)
+		{
+			cstr = astr[Ja];
+			for (pos = 0; pos < cstr.itot; pos++)
+			{
+				Ia = cstr.istr[pos];
+				ms = cstr.cmpind[pos];
+				for (mu = 0; mu < K; mu++)
+					for (si = 0; si < K; si++)
+						if (cpind(mu,si) == ms)
+							for (nu = 0; nu < K; nu++)
+								G[index4(mu,nu,nu,si,K)] -= cstr.sgn[pos]
+									* (C_fci(Ia * tot + Ib)
+									* C_fci(Ja * tot + Ib)
+									+ C_fci(Ib * tot + Ia)
+									* C_fci(Ib * tot + Ja)) / 2.;
+
+			}
+		}
+	/*for (mu = 0; mu < K; mu++)
+		for (nu = 0; nu < K; nu++)
+			for (la = 0; la < K; la++)
+				for (si = 0; si < K; si++)
+					printf ("%d;%d;%d;%d;%18.16f\n", mu, nu, la, si, G[index4(mu,nu,la,si,K)]);
+	*/
+	double sum = 0;
+	for (mu = 0; mu < K; mu++)
+		for (nu = 0; nu < K; nu++)
+			sum += G[index4(mu,nu,mu,nu,K)];
+	cout << "sum = " << sum << "\n\n";
+}
 #endif

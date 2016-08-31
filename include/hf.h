@@ -14,6 +14,23 @@ using namespace std;
 
 #define esXd SelfAdjointEigenSolver<MatrixXd>
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
+#define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
+
+int *ioff;		// lookup table for compound indices
+
+void _gen_ioff_ (int len)
+// set up the lookup table 'ioff'
+{
+	int i;
+	ioff = new int [len + 1];
+	if (ioff == NULL)
+	{
+		cout << "failed to malloc memory for array ioff!\n";
+		exit (1);
+	}
+	ioff[0] = 0;
+	for (i = 1; i < len + 1; i++)	ioff[i] = ioff[i - 1] + i;
+}
 
 // eigen solver for Hermitian matrix
 void _eigh_ (const MatrixXd& A, MatrixXd& U, VectorXd& D)

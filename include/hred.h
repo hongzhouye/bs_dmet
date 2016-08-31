@@ -20,7 +20,7 @@ class HRED
 
 void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 {
-	int i, j, k, l, mu;
+	int i, j, k, l, mu, ij, kl, ijkl;
 	MatrixXd T = sm.T;
 
 	// Environment's contribution to himp
@@ -37,7 +37,7 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 
 	// Vimp
 	Ni = 2 * sm.Nimp;
-	V = _darray_gen_ (Ni * Ni * Ni * Ni);
+	/*V = _darray_gen_ (Ni * Ni * Ni * Ni);
 	for (i = 0; i < Ni; i++)
 		for (j = i; j < Ni; j++)
 			for (k = j; k < Ni; k++)
@@ -56,6 +56,25 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 						V[index4(l,i,k,j,Ni)] = V[index4(l,j,i,k,Ni)] = V[index4(l,j,k,i,Ni)] =
 						V[index4(l,k,i,j,Ni)] = V[index4(l,k,j,i,Ni)] = V[index4(i,j,k,l,Ni)];
 				}
+	*/
+	int lenh = K * (K + 1) / 2, lenV = lenh * (lenh + 1) / 2;
+	V = _darray_gen_ (lenV);
+	for (i = 0; i < Ni; i++)
+		for (j = 0; j <= i; j++)
+		{
+			ij = cpind(i,j);
+			for (k = 0; k < Ni; k++)
+				for (l = 0; l <= k; l++)
+				{
+					kl = cpind(k,l)
+					if (kl <= ij)
+					{
+						ijkl = cpind(ij,kl)
+						for (mu = 0; mu < hub.K; mu++)	V[ijkl] += T(mu, i) * T(mu, j) * T(mu, k) * T(mu, l);
+						V[ijkl] *= hub.U;
+					}
+				}
+		}
 
 	// brute-force
 	/*for (i = 0; i < Ni; i++)

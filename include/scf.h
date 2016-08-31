@@ -120,12 +120,12 @@ void SCF::_scf_ ()
     MatrixXd Pold;  Pold.setZero (K, K);
     MatrixXd err;   err.setZero (K, K);
     DIIS Diis;  Diis._diis_init_ (K);
+
+    // CHECK 
+    //cout << "h:\n" << h << "\n\n";
+    //cout << "P:\n" << P << "\n\n";
+
     cout << "#iter\tscf error\n";
-
-    // check
-    cout << "h:\n" << h << "\n\n";
-    cout << "P:\n" << P << "\n\n";
-
     while (iter < MAX_SCF_ITER)
     {
         Eold = _get_hf_E_ ();
