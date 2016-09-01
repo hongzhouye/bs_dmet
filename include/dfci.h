@@ -445,30 +445,37 @@ void DFCI::_1PDM_ ()
 	AB_STRING cstr;
 
 	int mu, nu, pos, mn, mnp;
-	long int Ia, Ja, Ib;
-	for (Ib = 0; Ib < tot; Ib++)
-		for (Ja = 0; Ja < tot; Ja++)
+	long int Ia, Ja, Ib, iIa, iJa, iIb;
+	double Ca, Cb;
+	for (Ja = 0; Ja < tot; Ja++)
+	{
+		iJa = Ja * tot;
+		cstr = astr[Ja];
+		for (pos = 0; pos < cstr.itot; pos++)
 		{
-			cstr = astr[Ja];
-			for (pos = 0; pos < cstr.itot; pos++)
+			Ia = cstr.istr[pos];
+			iIa = Ia * tot;
+			Ca = Cb = 0;
+			for (Ib = 0; Ib < tot; Ib++)
 			{
-				Ia = cstr.istr[pos];
-				mn = cstr.cmpind[pos];
-				for (mu = 0; mu < K; mu++)
-					for (nu = 0; nu < K; nu++)
-					{
-						mnp = cpind(mu, nu);
-						if (mn == mnp)
-						{
-							P(mu, nu) += (C_fci(Ia * tot + Ib, 0) *
-								C_fci(Ja * tot + Ib, 0)
-								//+ C_fci(Ib * tot + Ia, 0) *
-								//C_fci(Ib * tot + Ja, 0)
-							) * cstr.sgn[pos];
-						}
-					}
+				Ca += C_fci(iIa + Ib) * C_fci(iJa + Ib);
+				//iIb = Ib * tot;
+				//Cb += C_fci(iIb + Ia) * C_fci(iIb + Ja);
 			}
+			mn = cstr.cmpind[pos];
+			for (mu = 0; mu < K; mu++)
+				for (nu = 0; nu < K; nu++)
+				{
+					mnp = cpind(mu, nu);
+					if (mn == mnp)
+					{
+						P(mu, nu) += (Ca
+							//+ Cb
+						) * cstr.sgn[pos];
+					}
+				}
 		}
+	}
 }
 
 void DFCI::_2PDM_ ()

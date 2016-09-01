@@ -37,7 +37,7 @@ int main (int argc, char * argv[])
 	// Construct Hred
 	HRED hr;
 	hr._xform_ (hub, sm);
-	hr._write_ ();
+	//hr._write_ ();
 
 	// SCF on Hred, for CHECK
 	SCF hred_scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
