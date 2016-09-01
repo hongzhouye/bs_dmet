@@ -27,6 +27,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
             E += h(mu, nu) * P(nu, mu);
     E *= 2.;
 
+    cout << "CHCECK P:\n" << P << "\n\n";
     // Szabo89book page 141
     /*int ml, ns;
     for (mu = 0; mu < N; mu++)
@@ -52,14 +53,15 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
     int lenV = lenh * (lenh + 1) / 2;
     double *G = _darray_gen_ (lenV);
     for (mu = 0; mu < K; mu++)
-        for (nu = 0; nu <= mu; nu++)
+        for (nu = 0; nu < K; nu++)
         {
             mn = cpind(mu,nu);
             for (si = 0; si < K; si++)
-                for (la = 0; la <= si; la++)
+                for (la = 0; la < K; la++)
                 {
                     ls = cpind(la,si);
-                    if (ls <= mn)   G[cpind(mn,ls)] = 2. * P(nu, mu) * P(la, si) - P(la, mu) * P(nu, si);
+                    //if (ls <= mn)
+                    G[cpind(mn,ls)] += 2. * P(nu, mu) * P(la, si) - P(la, mu) * P(nu, si);
                 }
         }
 
