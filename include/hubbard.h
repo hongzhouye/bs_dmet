@@ -141,7 +141,7 @@ void HUBBARD::_print_ ()
 	cout << "energy levels:\n" << e << "\n\n";
 	cout << "Occupation:\n" << n << "\n\n";
 	cout << "Density matrix:\n" << P << "\n\n";
-	printf ("Total Energy: %18.16f\n\n", _get_E_ ());
+	printf ("Initial SCF Energy: %18.16f\n\n", _get_E_ ());
 }
 
 #endif

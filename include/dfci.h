@@ -432,7 +432,7 @@ void DFCI::_dfci_ ()
 	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
 	MatrixXd v = b * alpha;	C_fci = v;
 	cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
-	printf ("FCI energy is %18.16f\n\n", lambda);
+	//printf ("FCI energy is %18.16f\n\n", lambda);	// no need to print out this value
 
 	iter ++;
 }
@@ -483,31 +483,40 @@ void DFCI::_2PDM_ ()
 	long int Ia, Ib, Ja, Jb, Ka;
 
 	// Gamma^{alpha,alpha}_1, Gamma^{beta,beta}_1
-	for (Ib = 0; Ib < tot; Ib++)
-		for (Ja = 0; Ja < tot; Ja++)
+	double Ca = 0, Cb = 0;
+	long int iIa, iJa, iIb;
+	for (Ja = 0; Ja < tot; Ja++)
+	{
+		iJa = Ja * tot;
+		cstr = astr[Ja];
+		for (pos = 0; pos < cstr.itot; pos++)
 		{
-			cstr = astr[Ja];
-			for (pos = 0; pos < cstr.itot; pos++)
+			Ka = cstr.istr[pos];
+			ns = cstr.cmpind[pos];
+			cstr2 = astr[Ka];
+			for (pos2 = 0; pos2 < cstr2.itot; pos2++)
 			{
-				Ka = cstr.istr[pos];
-				ns = cstr.cmpind[pos];
-				cstr2 = astr[Ka];
-				for (pos2 = 0; pos2 < cstr2.itot; pos2++)
+				Ia = cstr2.istr[pos2];
+				iIa = Ia * tot;
+				Ca = Cb = 0;
+				for (Ib = 0; Ib < tot; Ib++)
 				{
-					Ia = cstr2.istr[pos2];
-					ml = cstr2.cmpind[pos2];
-					G[cpind(ml,ns)] += cstr.sgn[pos] * cstr2.sgn[pos2]
-						* (C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Ib)
-					//	+ C_fci(Ib * tot + Ia) * C_fci(Ib * tot + Ja)
-						)
-					//	/ 2.
-					;
+					Ca += C_fci(iIa + Ib) * C_fci(iJa + Ib);
+					//iIb = Ib * tot;
+					//Cb += C_fci(iIb + Ia) * C_fci(iIb + Ja);
 				}
+				ml = cstr2.cmpind[pos2];
+				G[cpind(ml,ns)] += cstr.sgn[pos] * cstr2.sgn[pos2]
+					* (Ca
+				//	+ Cb
+					)
+				//	/ 2.
+				;
 			}
 		}
+	}
 
 	// Gamma^{alpha,beta}_1
-	double *tempG = _darray_gen_ (lenV);
 	for (Ja = 0; Ja < tot; Ja++)
 	{
 		cstr = astr[Ja];
@@ -530,8 +539,6 @@ void DFCI::_2PDM_ ()
 	}
 
 	// Gamma^{alpha/beta}_2
-	double Ca = 0, Cb = 0;
-	long int iIa, iJa;
 	for (Ja = 0; Ja < tot; Ja++)
 	{
 		cstr = astr[Ja];

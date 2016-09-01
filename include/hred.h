@@ -76,8 +76,8 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 				}
 		}
 
-	// CHECK
-	int ik, jl;
+	// CHECK cpind representation of V
+	/*int ik, jl;
 	for (i = 0; i < Ni; i++)
 		for (j = 0; j < Ni; j++)
 			for (k = 0; k < Ni; k++)
@@ -89,6 +89,7 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 					printf ("%d;%d;%d;%d;%18.16f\n", i, j, k, l, V[cpind(ik,jl)]);
 				}
 			}
+	*/
 
 	// brute-force
 	/*for (i = 0; i < Ni; i++)
