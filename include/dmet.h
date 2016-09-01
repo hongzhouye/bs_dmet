@@ -48,7 +48,9 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
     */
 
     // CHECK: mean-field 2PDM
-    double *G = _darray_gen_ (K * K * K * K);
+    int lenh = K * (K + 1) / 2;
+    int lenV = lenh * (lenh + 1) / 2;
+    double *G = _darray_gen_ (lenV);
     for (mu = 0; mu < K; mu++)
         for (nu = 0; nu <= mu; nu++)
         {
@@ -60,6 +62,19 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                     if (ls <= mn)   G[cpind(mn,ls)] = 2. * P(nu, mu) * P(la, si) - P(la, mu) * P(nu, si);
                 }
         }
+
+    int ml, ns;
+    for (mu = 0; mu < K; mu++)
+        for (nu = 0; nu < K; nu++)
+            for (la = 0; la < K; la++)
+            {
+                ml = cpind(mu,la);
+                for (si = 0; si < K; si++)
+                {
+                    ns = cpind(nu,si);
+                    printf ("%d;%d;%d;%d;%18.16f\n", mu, nu, la, si, G[cpind(ml,ns)]);
+                }
+            }
 
     for  (mu = 0; mu < K; mu++)
         for (nu = 0; nu < N; nu++)
