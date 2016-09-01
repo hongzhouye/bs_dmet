@@ -70,11 +70,25 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 					if (kl <= ij)
 					{
 						ijkl = cpind(ij,kl);
-						for (mu = 0; mu < hub.K; mu++)	V[ijkl] += T(mu, i) * T(mu, k) * T(mu, l) * T(mu, l);
+						for (mu = 0; mu < hub.K; mu++)	V[ijkl] += T(mu, i) * T(mu, k) * T(mu, j) * T(mu, l);
 						V[ijkl] *= hub.U;
 					}
 				}
 		}
+
+	// CHECK
+	int ik, jl;
+	for (i = 0; i < Ni; i++)
+		for (j = 0; j < Ni; j++)
+			for (k = 0; k < Ni; k++)
+			{
+				ik = cpind(i,k);
+				for (l = 0; l < Ni; l++)
+				{
+					jl = cpind(j,l);
+					printf ("%d;%d;%d;%d;%18.16f\n", i, j, k, l, V[cpind(ik,jl)]);
+				}
+			}
 
 	// brute-force
 	/*for (i = 0; i < Ni; i++)

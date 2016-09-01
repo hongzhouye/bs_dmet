@@ -53,13 +53,14 @@ int main (int argc, char * argv[])
 	cout << "FCI initialization succeeds!\n" << dfci.tot <<
 		" alpha strings are generated!\n\n";
 	dfci._dfci_ ();
-	/*dfci._1PDM_ ();
+	dfci._1PDM_ ();
 	cout << "scf 1PDM:\n" << hred_scf.P << "\n\n";
 	cout << "dfci 1PDM:\n" << dfci.P << "\n\n";
 	//cout << "check idempotency:\n" << hred_scf.P * hred_scf.P << "\n\n";
 	dfci._2PDM_ ();
+	cout << "go home!\n\n";
 	printf ("FCI-in-HF embedding energy: %18.16f\n\n",
 			dmet._dmet_energy_ (hr.h, hred_scf.V, dfci.P, dfci.G, dfci.N));
-	*/
+	
 	return 0;
 }

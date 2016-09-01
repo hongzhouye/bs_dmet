@@ -27,7 +27,6 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
             E += h(mu, nu) * P(nu, mu);
     E *= 2.;
 
-    cout << "CHCECK P:\n" << P << "\n\n";
     // Szabo89book page 141
     /*int ml, ns;
     for (mu = 0; mu < N; mu++)
@@ -65,7 +64,8 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                 }
         }
 
-    int ml, ns;
+    // CHECK
+    /*int ml, ns;
     for (mu = 0; mu < K; mu++)
         for (nu = 0; nu < K; nu++)
             for (la = 0; la < K; la++)
@@ -77,6 +77,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                     printf ("%d;%d;%d;%d;%18.16f\n", mu, nu, la, si, G[cpind(ml,ns)]);
                 }
             }
+    */
 
     for  (mu = 0; mu < K; mu++)
         for (nu = 0; nu < N; nu++)
@@ -90,7 +91,8 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                 }
         }
 
-    /*double sum = 0.;    int mm, nn;
+    double sum = 0.;    int mm, nn;
+    double sum2 = 0, sum3 = 0;
     for (mu = 0; mu < K; mu++)
     {
         mm = cpind(mu,mu);
@@ -101,7 +103,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
         }
     }
     printf ("sum = %f\n", sum);
-    */
+
     return E;
 }
 
@@ -110,14 +112,16 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
 double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int N)
 {
     int mu, nu, la, si, K = h.rows ();
-    double E = 0;
+    double E1 = 0, E2 = 0;
 
     for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
-            E += h(mu, nu) * P(nu, mu);
-    E *= 2.;
+            E1 += h(mu, nu) * P(nu, mu);
+    //E1 *= 2.;
+    printf ("One electron part: %18.16f\n\n", E1);
 
-    for (mu = 0; mu < N; mu++)
+    // old storage style of V and G
+    /*for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
             for (la = 0; la < K; la++)
                 for (si = 0; si < K; si++)
@@ -126,7 +130,24 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
                     //printf ("%d;%d;%d;%d;%d\n", mu, nu, la, si, index4(mu,nu,la,si,K));
                     E += G[index4(mu,nu,la,si,K)] * V[index4(mu,nu,la,si,K)];
                 }
-    return E;
+    */
+
+    // new storage style
+    int mn, ls;
+    for (mu = 0; mu < N; mu++)
+        for (nu = 0; nu < K; nu++)
+        {
+            mn = cpind(mu,nu);
+            for (la = 0; la < K; la++)
+                for (si = 0; si < K; si++)
+                {
+                    ls = cpind(la,si);
+                    E2 += G[cpind(mn,ls)] * V[cpind(mn,ls)];
+                }
+        }
+    printf ("Two electron part: %18.16f\n\n", E2);
+
+    return E1 + E2;
 }
 
 #endif

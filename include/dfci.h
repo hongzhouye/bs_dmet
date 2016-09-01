@@ -473,14 +473,16 @@ void DFCI::_1PDM_ ()
 
 void DFCI::_2PDM_ ()
 {
-	int K4 = K * K;	K4 = K4 * K4;
-	G = _darray_gen_ (K4);
+	int lenh = K * (K + 1) / 2;
+	int lenV = lenh * (lenh + 1) / 2;
+	G = _darray_gen_ (lenV);
 
 	AB_STRING cstr, cstr2;
 	int mu, nu, la, si, pos, pos2;
-	int ns, nsp, ml, mlp, ms, msp;		// compound indices
+	int ns, ml, ms, mn, ls;		// compound indices
 	long int Ia, Ib, Ja, Jb, Ka;
 
+	// Gamma^{alpha,alpha}_1, Gamma^{beta,beta}_1
 	for (Ib = 0; Ib < tot; Ib++)
 		for (Ja = 0; Ja < tot; Ja++)
 		{
@@ -489,31 +491,23 @@ void DFCI::_2PDM_ ()
 			{
 				Ka = cstr.istr[pos];
 				ns = cstr.cmpind[pos];
-				for (nu = 0; nu < K; nu++)
-					for (si = 0; si < K; si++)
-						if (cpind(nu,si) == ns)
-						{
-							cstr2 = astr[Ka];
-							for (pos2 = 0; pos2 < cstr2.itot; pos2++)
-							{
-								Ia = cstr2.istr[pos2];
-								ml = cstr2.cmpind[pos2];
-								for (mu = 0; mu < K; mu++)
-									for (la = 0; la < K; la++)
-										if (cpind(mu,la) == ml)
-										{
-											G[index4(mu,nu,la,si,K)] +=
-												cstr.sgn[pos] * cstr2.sgn[pos2] *
-												(C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Ib)
-												+ C_fci(Ib * tot + Ia) * C_fci(Ib * tot + Ja)
-											) / 2.;
-											//G[index4(mu,nu,la,si,K)] /= 2.;
-										}
-							}
-						}
+				cstr2 = astr[Ka];
+				for (pos2 = 0; pos2 < cstr2.itot; pos2++)
+				{
+					Ia = cstr2.istr[pos2];
+					ml = cstr2.cmpind[pos2];
+					G[cpind(ml,ns)] += cstr.sgn[pos] * cstr2.sgn[pos2]
+						* (C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Ib)
+					//	+ C_fci(Ib * tot + Ia) * C_fci(Ib * tot + Ja)
+						)
+					//	/ 2.
+					;
+				}
 			}
 		}
 
+	// Gamma^{alpha,beta}_1
+	double *tempG = _darray_gen_ (lenV);
 	for (Ja = 0; Ja < tot; Ja++)
 	{
 		cstr = astr[Ja];
@@ -521,61 +515,62 @@ void DFCI::_2PDM_ ()
 		{
 			Ia = cstr.istr[pos];
 			ml = cstr.cmpind[pos];
-			for (mu = 0; mu < K; mu++)
-				for (la = 0; la < K; la++)
-					if (cpind(mu,la) == ml)
-					{
-						for (Jb = 0; Jb < tot; Jb++)
-						{
-							cstr2 = astr[Jb];
-							for (pos2 = 0; pos2 < cstr2.itot; pos2++)
-							{
-								Ib = cstr2.istr[pos];
-								ns = cstr2.cmpind[pos];
-								for (nu = 0; nu < K; nu++)
-									for (si = 0; si < K; si++)
-									{
-										if (cpind(nu,si) == ns)
-										{
-											G[index4(mu,nu,la,si,K)] += cstr.sgn[pos] * cstr2.sgn[pos2] * C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Jb);
-										}
-									}
-							}
-						}
-					}
+			for (Jb = 0; Jb < tot; Jb++)
+			{
+				cstr2 = astr[Jb];
+				for (pos2 = 0; pos2 < cstr2.itot; pos2++)
+				{
+					Ib = cstr2.istr[pos2];
+					ns = cstr2.cmpind[pos2];
+					G[cpind(ml,ns)] += cstr.sgn[pos] * cstr2.sgn[pos2]
+						* C_fci(Ia * tot + Ib) * C_fci(Ja * tot + Jb);
+				}
+			}
 		}
 	}
 
-	for (Ib = 0; Ib < tot; Ib++)
-		for (Ja = 0; Ja < tot; Ja++)
+	// Gamma^{alpha/beta}_2
+	double Ca = 0, Cb = 0;
+	long int iIa, iJa;
+	for (Ja = 0; Ja < tot; Ja++)
+	{
+		cstr = astr[Ja];
+		iJa = Ja * tot;
+		for (pos = 0; pos < cstr.itot; pos++)
 		{
-			cstr = astr[Ja];
-			for (pos = 0; pos < cstr.itot; pos++)
+			Ia = cstr.istr[pos];
+			iIa = Ia * tot;
+			ms = cstr.cmpind[pos];
+			Ca = Cb = 0;
+			for (Ib = 0; Ib < tot; Ib++)
 			{
-				Ia = cstr.istr[pos];
-				ms = cstr.cmpind[pos];
-				for (mu = 0; mu < K; mu++)
-					for (si = 0; si < K; si++)
-						if (cpind(mu,si) == ms)
-							for (nu = 0; nu < K; nu++)
-								G[index4(mu,nu,nu,si,K)] -= cstr.sgn[pos]
-									* (C_fci(Ia * tot + Ib)
-									* C_fci(Ja * tot + Ib)
-									+ C_fci(Ib * tot + Ia)
-									* C_fci(Ib * tot + Ja)) / 2.;
-
+				Ca += C_fci(iIa + Ib) * C_fci(iJa + Ib);
+				//Cb += C_fci(Ib * tot + Ia) * C_fci(Ib * tot + Ja);
 			}
-		}
-	/*for (mu = 0; mu < K; mu++)
-		for (nu = 0; nu < K; nu++)
-			for (la = 0; la < K; la++)
+			for (mu = 0; mu < K; mu++)
 				for (si = 0; si < K; si++)
-					printf ("%d;%d;%d;%d;%18.16f\n", mu, nu, la, si, G[index4(mu,nu,la,si,K)]);
-	*/
-	double sum = 0;
+					if (cpind(mu,si) == ms)
+						for (nu = 0; nu < K; nu++)
+						{
+							mn = cpind(mu,nu);	ns = cpind(nu,si);
+							G[cpind(mn,ns)] -= cstr.sgn[pos] * Ca;
+							//G[cpind(mn,ns)] -= cstr.sgn[pos] * (Ca + Cb) / 2.;
+						}
+		}
+	}
+
+	// CHECK: sum rule
+	/*double sum = 0;
 	for (mu = 0; mu < K; mu++)
-		for (nu = 0; nu < K; nu++)
-			sum += G[index4(mu,nu,mu,nu,K)];
+	{
+		mn = cpind(mu,mu);
+		for (la = 0; la < K; la++)
+		{
+			ls = cpind(la,la);
+			sum += G[cpind(mn,ls)];
+		}
+	}
 	cout << "sum = " << sum << "\n\n";
+	*/
 }
 #endif
