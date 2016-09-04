@@ -56,7 +56,7 @@ void SCHMIDT::_form_xform_mat_ ()
 	{
 		T.block (frag[i], 0, 1, 2 * Nimp).setZero ();
 		T(frag[i], i) = 1.;		// set C^{F} to eye(Nimp)
-								// see Knizia13JCTC
+								// see Knizia13JCTC, Bulik14PRB
 	}
 	TE = C.rightCols (N - Nimp);
 

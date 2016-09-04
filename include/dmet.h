@@ -6,6 +6,10 @@
 #include <Eigen/Dense>
 #include "hf.h"
 #include "schmidt.h"
+#include "hred.h"
+#include "dfci.h"
+#include "scf.h"
+#include "read.h"
 
 using namespace std;
 using namespace Eigen;
@@ -13,10 +17,72 @@ using namespace Eigen;
 class DMET
 {
     public:
+        HUBBARD hub;
+        SCHMIDT sm;
+        HRED hr;
+        void _dmet_init_ (char *);
+        void _dmet_iter_ ();
+        void _dmet_check_ ();
         double _dmet_energy_ (MatrixXd&, double *, MatrixXd&, int);
         double _dmet_energy_ (MatrixXd&, double *, MatrixXd&, double *, int);
 };
 
+void DMET::_dmet_init_ (char *fname)
+{
+    // read parameters from the input file
+    _read_ (fname, hub, sm);
+
+    // set up ioff -- the lookup table
+	int K = sm.Nimp * 2;
+	_gen_ioff_ (K * (K + 1) / 2);
+
+    // Hubbard Hartree-Fock calculation
+	hub._hubbard_rhf_ ();
+    hub._print_ ();
+
+    // Schmidt
+	sm._schmidt_ (hub);
+
+	// Construct Hred
+	hr._xform_ (hub, sm);
+}
+
+void DMET::_dmet_check_ ()
+{
+    SCF scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
+    scf._scf_ ();
+    cout << "success:\n" << scf.P << "\n\n";
+    printf ("HF-in-HF embedding energy: %18.16f\n\n",
+		_dmet_energy_ (scf.h, scf.V, scf.P, scf.N));
+
+    DFCI dfci;
+    dfci._init_ (hr);
+    cout << "FCI initialization succeeds!\n" << dfci.tot <<
+		" alpha strings are generated!\n\n";
+	dfci._dfci_ ();
+	dfci._1PDM_ ();
+	cout << "scf 1PDM:\n" << scf.P << "\n\n";
+	cout << "dfci 1PDM:\n" << dfci.P << "\n\n";
+    cout << "P_tot, fragment block:\n";
+    for (int i = 0; i < sm.Nimp; i++)
+    {
+        for (int j = 0; j < sm.Nimp; j++)
+            printf ("%10.7f\t", hub.P(sm.frag[i], sm.frag[j]));
+        cout << "\n";
+    }   cout << "\n";
+    cout << "T^{dagger} P_tot T:\n" << sm.T.transpose () * hub.P * sm.T << "\n\n";
+	//cout << "check idempotency:\n" << hred_scf.P * hred_scf.P << "\n\n";
+	dfci._2PDM_ ();
+	printf ("FCI-in-HF embedding energy: %18.16f\n\n",
+			_dmet_energy_ (hr.h, scf.V, dfci.P, dfci.G, dfci.N));
+}
+
+void DMET::_dmet_iter_ ()
+{
+
+}
+
+// Mean-field case: 2PDM is not needed
 double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
 {
     int i, mu, nu, la, si, mn, ls, mnls, K = h.rows ();
@@ -90,19 +156,6 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                     E += G[mnls] * V[mnls];
                 }
         }
-
-    double sum = 0.;    int mm, nn;
-    double sum2 = 0, sum3 = 0;
-    for (mu = 0; mu < K; mu++)
-    {
-        mm = cpind(mu,mu);
-    	for (nu = 0; nu < K; nu++)
-        {
-            nn = cpind(nu,nu);
-    		sum += G[cpind(mm,nn)];
-        }
-    }
-    printf ("sum = %f\n", sum);
 
     return E;
 }

@@ -15,7 +15,7 @@ using namespace Eigen;
 
 int main (int argc, char * argv[])
 {
-	HUBBARD hub;
+	/*HUBBARD hub;
 	SCHMIDT sm;
 
 	// read parameters from the input file
@@ -29,7 +29,7 @@ int main (int argc, char * argv[])
 
 	// Hubbard Hartree-Fock calculation
 	hub._hubbard_rhf_ ();
-	hub._print_ ();
+    hub._print_ ();
 
 	// Schmidt
 	sm._schmidt_ (hub);
@@ -38,9 +38,20 @@ int main (int argc, char * argv[])
 	HRED hr;
 	hr._xform_ (hub, sm);
 	//hr._write_ ();
+	*/
+
+	DMET dmet;
+
+	// initialization
+	if (argc == 1)	dmet._dmet_init_ ("input");
+	else if (argc == 2)	dmet._dmet_init_ (argv[1]);
+	else	{cout << "Too many input files!\n";	exit (1);}
+
+	// check
+	dmet._dmet_check_ ();
 
 	// SCF on Hred, for CHECK
-	SCF hred_scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
+	/*SCF hred_scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
 	hred_scf._scf_ ();
 
 	DMET dmet;
@@ -60,6 +71,6 @@ int main (int argc, char * argv[])
 	dfci._2PDM_ ();
 	printf ("FCI-in-HF embedding energy: %18.16f\n\n",
 			dmet._dmet_energy_ (hr.h, hred_scf.V, dfci.P, dfci.G, dfci.N));
-	
+	*/
 	return 0;
 }
