@@ -170,7 +170,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
             E1 += h(mu, nu) * P(nu, mu);
-    //E1 *= 2.;
+    E1 /= (sm.Nimp / 2.);
     printf ("One electron part: %18.16f\n\n", E1);
 
     // old storage style of V and G
@@ -198,6 +198,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
                     E2 += G[cpind(mn,ls)] * V[cpind(mn,ls)];
                 }
         }
+    E2 /= sm.Nimp;
     printf ("Two electron part: %18.16f\n\n", E2);
 
     return E1 + E2;

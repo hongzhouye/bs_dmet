@@ -476,6 +476,7 @@ void DFCI::_1PDM_ ()
 				}
 		}
 	}
+	P.diagonal () *= 2.;	P /= 2.;
 }
 
 void DFCI::_2PDM_ ()
