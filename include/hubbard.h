@@ -1,11 +1,18 @@
 #ifndef _HUBBARD_H_INCLUDED_
 #define _HUBBARD_H_INCLUDED_
 
+/* A class for the Hubbard model setup.
+ * h, P, C, U etc. are for the mean-field bath.
+ * In frag.h, we will define Hamiltonian's for
+ * each fragment.
+ */
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <Eigen/Dense>
+#include "scf.h"
 #include "hf.h"
 //#include "diis.h"
 //#include "matdeque.h"
@@ -25,18 +32,16 @@ class HUBBARD
 		VectorXd n, e;
 		MatrixXd h, F, occ, C, P;
 		void _init_ ();
-		void _build_F_ ();
-		double _error_ ();
 		void _hubbard_rhf_ ();
 		double _get_E_ ();
 		void _print_ ();
+		MatrixXd _PFrag_ (int *, int);
+		MatrixXd _PFrag_ (int *, int, const MatrixXd&);
 };
 
 // Initialization
 void HUBBARD::_init_ ()
 {
-	int mu;
-
 	// set the dimension for all matrices/vectors
 	n.setZero (K);
 	e.setZero (K);
@@ -53,68 +58,21 @@ void HUBBARD::_init_ ()
 	n.setZero ();
 
 	// setup h matrix
-	for (mu = 0; mu < K - 1; mu ++)
+	for (int mu = 0; mu < K - 1; mu ++)
 		h (mu, mu + 1) = h (mu + 1, mu) = -1.;
 	h (0, K - 1) = h (K - 1, 0) = (BC == 'a') ? (1.) : (-1.);
-}
-
-// build the Fock matrices for both spins
-void HUBBARD::_build_F_ ()
-{
-	F = h;
-	F += U * (n.asDiagonal ());
-}
-
-// calculate diis error
-double HUBBARD::_error_ ()
-{
-	MatrixXd err;
-	err = F * P - P * F;
-
-	return err.norm () / K;
 }
 
 // solve the Hubbard model for the translational symmetric case
 // restricted spin symmetry is assumed
 void HUBBARD::_hubbard_rhf_ ()
 {
-	// initialization
 	_init_ ();
-
-	VectorXd nnew;
-	double er = 100., erc, mix_beta = 0.7;
-	int iter = 0;
-
-	printf ("#iter\terror\t\t|[F, p]|\n");
-	while (iter < SCF_ITER && er > SCF_CONV)
-	{
-		// build new F
-		_build_F_ ();
-
-		// erc = ||[F, P]||
-		erc = _error_ ();
-
-		// diagonalizing F
-		_eigh_ (F, C, e);
-		P = C * occ * C.transpose ();	nnew = P.diagonal ();
-
-		er = (n - nnew).norm ();
-		iter ++;
-		printf ("%4d\t%.3e\t%.3e\n", iter, er, erc);
-
-		if (er < SCF_CONV)
-		{
-			cout << "\nSCF converges in " << iter << " cycles.\n\n";
-			break;
-		}
-		else
-		{
-			// mix densities
-			n = mix_beta * nnew + (1. - mix_beta) * n;
-		}
-	}
-	cout << "Hubbard C:\n" << C << "\n\n";
-	cout << endl;
+	SCF scf;
+	scf._init_hub_ (h, U, K, N);
+	scf._guess_ ("core");
+	scf._scf_ ();
+	P = scf.P;	C = scf.C;	F = scf.F;	e = scf.e;	n = P.diagonal ();
 }
 
 // get energy
@@ -122,14 +80,6 @@ double HUBBARD::_get_E_ ()
 {
 	int mu, nu;
 	double Etot = 0.;
-	/*for (mu = 0; mu < K - 1; mu++)
-		Etot += -2. * (P (mu, mu + 1) + P (mu + 1, mu)) + U * n (mu) * n (mu);
-	Etot += -2. * (P (0, K - 1) + P (K - 1, 0)) + U * n (K - 1) * n (K - 1);
-	*/
-
-	/*for (mu = 0; mu < N; mu++)	Etot += e(mu);
-	Etot *= 2.;
-	Etot -= U * (n.cwiseProduct (n)).sum ();*/
 
 	Etot = ((h + F) * P).trace ();
 
@@ -142,6 +92,24 @@ void HUBBARD::_print_ ()
 	cout << "Occupation:\n" << n << "\n\n";
 	cout << "Density matrix:\n" << P << "\n\n";
 	printf ("Initial SCF Energy: %18.16f\n\n", _get_E_ ());
+}
+
+MatrixXd HUBBARD::_PFrag_ (int *frag, int Nimp)
+{
+	MatrixXd PF;	PF.setZero (Nimp, Nimp);
+	for (int mu = 0; mu < Nimp; mu++)
+        for (int nu = 0; nu < Nimp; nu++)
+            PF(mu, nu) = P(frag[mu], frag[nu]);
+	return PF;
+}
+
+MatrixXd HUBBARD::_PFrag_ (int *frag, int Nimp, const MatrixXd& Ptot)
+{
+	MatrixXd PF;	PF.setZero (Nimp, Nimp);
+	for (int mu = 0; mu < Nimp; mu++)
+        for (int nu = 0; nu < Nimp; nu++)
+            PF(mu, nu) = Ptot(frag[mu], frag[nu]);
+	return PF;
 }
 
 #endif

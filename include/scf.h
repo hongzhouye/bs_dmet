@@ -8,7 +8,6 @@
 #include <iostream>
 #include <cstdio>
 #include "hf.h"
-#include "hred.h"
 #include "diis.h"
 
 using namespace Eigen;
@@ -16,7 +15,7 @@ using namespace std;
 
 #define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
 #define RCA_THR 1E-2    // thr to switch to diis
-#define SCF_THR 1E-10
+#define SCF_THR 1E-8
 #define MAX_SCF_ITER 1000
 
 class SCF
@@ -25,27 +24,32 @@ class SCF
         void _print_ ();
         void _rca_ (const MatrixXd&, double);
     public:
+        string scf_type;
         int K, N;               // basis set size, # of e^-
         int diis, rca;
         MatrixXd h, P, C, F, occ;
         VectorXd e;             // energy levels
-        double *V;
+        double *V, U;           // U if hubbard
         double E_scf;           // electronic energy
         double scf_error;       // ||[F, P]||
 
-        SCF (MatrixXd&, double *, int, int);
+        void _init_ (const MatrixXd&, double *, int, int);
                                 // SCF setup, diis and rca are ON
-        SCF (MatrixXd&, double *, int, int, int ,int);
+        void _init_ (const MatrixXd&, double *, int, int, int ,int);
                                 // SCF setup, give diis and rca
-        void _init_ ();
+        void _init_hub_ (const MatrixXd&, double, int, int);
+                                // SCF setup for HUBBARD, diis and rca are ON
+        void _guess_ (string);
         void _fock_ ();
+        void _fock_hub_ ();
         void _scf_ ();
         double _get_hf_E_ ();
 };
 
 // default setup: diis and rca are both toggled
-SCF::SCF (MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
+void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
 {
+    scf_type = "gen";
     K = Nbs;    N = Ne;
     h.setZero (K, K);   h = hinp;
     int lenh = K * (K + 1) / 2;
@@ -55,11 +59,16 @@ SCF::SCF (MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
 
     // diis and rca default: ON
     diis = 1;   rca = 1;
+
+    // setup matrix size
+    P.setZero (K, K);    C.setZero (K, K);   F.setZero (K, K);
+    occ.setZero (K, K);    occ.topLeftCorner (N, N).diagonal ().setOnes ();
 }
 
 // specify whether diis and rca are used or not
-SCF::SCF (MatrixXd& hinp, double *Vinp, int Nbs, int Ne, int idiis, int irca)
+void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne, int idiis, int irca)
 {
+    scf_type = "gen";
     K = Nbs;    N = Ne;
     h.setZero (K, K);   h = hinp;
     int lenh = K * (K + 1) / 2;
@@ -69,21 +78,37 @@ SCF::SCF (MatrixXd& hinp, double *Vinp, int Nbs, int Ne, int idiis, int irca)
 
     // scf acceleration
     diis = idiis;   rca = irca;
-}
-
-// SCF initialization
-void SCF::_init_ ()
-{
-    int i, j, k, l;
 
     // setup matrix size
     P.setZero (K, K);    C.setZero (K, K);   F.setZero (K, K);
     occ.setZero (K, K);    occ.topLeftCorner (N, N).diagonal ().setOnes ();
+}
 
+void SCF::_init_hub_ (const MatrixXd& hubh, double hubU, int Nbs, int Ne)
+{
+    scf_type = "hub";
+    K = Nbs;    N = Ne;
+    h.setZero (K, K);   h = hubh;
+    U = hubU;
+
+    // scf acceleration
+    diis = 0;   rca = 1;
+
+    // setup matrix size
+    P.setZero (K, K);    C.setZero (K, K);   F.setZero (K, K);
+    occ.setZero (K, K);    occ.topLeftCorner (N, N).diagonal ().setOnes ();
+}
+
+// SCF initialization
+void SCF::_guess_ (string type)
+{
     // core guess for F
-    _eigh_ (h, C, e);
-    P = C * occ * C.transpose ();
-    _fock_ ();
+    if (type == "core")
+    {
+        _eigh_ (h, C, e);
+        P = C * occ * C.transpose ();
+        (scf_type == "gen") ? (_fock_ ()) : (_fock_hub_ ());
+    }
 }
 
 void SCF::_fock_ ()
@@ -111,6 +136,13 @@ void SCF::_fock_ ()
 	F = G + h;
 }
 
+void SCF::_fock_hub_ ()
+{
+    VectorXd n = P.diagonal ();
+    F = h;
+    F += (U * n).asDiagonal ();
+}
+
 void SCF::_rca_ (const MatrixXd& Pold, double dE)
 {
 	double dE_deriv = ((P - Pold) * F).sum();
@@ -124,19 +156,13 @@ void SCF::_rca_ (const MatrixXd& Pold, double dE)
 
 void SCF::_scf_ ()
 {
-    _init_ ();
     int iter = 1;
-    const double mixing_beta = 0.3;
     double Eold;
     MatrixXd Pold;  Pold.setZero (K, K);
     MatrixXd err;   err.setZero (K, K);
     DIIS Diis;  Diis._diis_init_ (K);
 
-    // CHECK
-    //cout << "h:\n" << h << "\n\n";
-    //cout << "P:\n" << P << "\n\n";
-
-    cout << "#iter\tscf error\n";
+    //cout << "#iter\tscf error\n";
     while (iter < MAX_SCF_ITER)
     {
         Eold = _get_hf_E_ ();
@@ -150,14 +176,15 @@ void SCF::_scf_ ()
         if (rca)    _rca_ (Pold, _get_hf_E_ () - Eold);
 
         // forming new F
-        _fock_ ();
+        (scf_type == "gen") ? (_fock_ ()) : (_fock_hub_ ());
 
         // calculating error and doing rca/diis
         err = F * P - P * F;
         scf_error = err.norm () / K;
         if (diis && rca && scf_error < RCA_THR)
         {
-            rca = 0; cout << "\nEnd RCA, Start DIIS...\n\n";
+            rca = 0;
+            //cout << "\nEnd RCA, Start DIIS...\n\n";
         }
         Diis.Fs.append (F);
         Diis.errs.append (err);
@@ -167,18 +194,19 @@ void SCF::_scf_ ()
         if (scf_error < SCF_THR)    break;
 
         // print and increase iter
-        printf ("%4d\t%10.7e\n", iter, scf_error);
+        //printf ("%4d\t%10.7e\n", iter, scf_error);
         iter ++;
     }
     if (iter >= MAX_SCF_ITER)
     {
-        cout << "\nSCF subroutine fails to convege!\n\n";
+        cout << "Unfortunately, the SCF subroutine REFUSES to convege!\t"
+            << scf_error << "\n\n";
         exit (1);
     }
     else
     {
-        cout << "\nSCF converges in " << iter << " iterations!\n\n";
-        _print_ ();
+    //    cout << "\nSCF converges in " << iter << " iterations!\n\n";
+    //    _print_ ();
     }
 }
 

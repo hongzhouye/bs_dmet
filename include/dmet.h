@@ -49,7 +49,9 @@ void DMET::_dmet_init_ (char *fname)
 
 void DMET::_dmet_check_ ()
 {
-    SCF scf (hr.h, hr.V, hr.Ni, hr.Ni / 2);
+    SCF scf;
+    scf._init_ (hr.h, hr.V, hr.Ni, hr.Ni / 2);
+    scf._guess_ ("core");
     scf._scf_ ();
     cout << "success:\n" << scf.P << "\n\n";
     printf ("HF-in-HF embedding energy: %18.16f\n\n",
