@@ -19,7 +19,7 @@ using namespace std;
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 #define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
 
-typedef map<string, int> fmap;
+typedef map<string, int> msi;
 typedef vector<string> vs;
 typedef vector<int> vi;
 typedef vector<vector<int> > vvi;

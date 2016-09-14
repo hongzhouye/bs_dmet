@@ -32,22 +32,23 @@ class DMET
 void DMET::_dmet_init_ (char *fname)
 {
     // read parameters from the input file
-    _read_ (fname, hub, sm, frag);
+    _read_ (fname, hub, frag);
 
     // set up ioff -- the lookup table
 	int K = frag.Nimp * 2;
 	_gen_ioff_ (K * (K + 1) / 2);
 
     // Hubbard Hartree-Fock calculation
-	//hub._hubbard_rhf_ ();
+	hub._hubbard_rhf_ ();
     //hub._print_ ();
 
     // Schmidt
-	//sm._schmidt_ (hub);
-    //sm._print_ (hub);
+    sm._init_ (hub, frag);
+	sm._schmidt_ (hub);
+    //sm._print_ ();
 
 	// Construct Hred
-	//hr._xform_ (hub, sm);
+	hr._xform_ (hub, sm);
 }
 
 void DMET::_dmet_check_ ()
@@ -56,7 +57,8 @@ void DMET::_dmet_check_ ()
     cout << "|      read check     |" << endl;
     cout << "=======================" << endl;
 
-    printf ("%d\t%d\t%f\n\n", hub.K, hub.N, hub.U);
+    printf ("hub.K = %d\nhub.N = %d\nhub.U = %f\n", hub.K, hub.N, hub.U);
+    cout << "hub.BC = " << hub.BC << "\n\n";
     cout << "Nimp: " << frag.Nimp << "\n";
     for (auto i = frag.fragments.begin (); i != frag.fragments.end (); i++)
         cout << i->first << ": " << i->second << "\n";
@@ -107,7 +109,7 @@ void DMET::_dmet_check_ ()
     for (int i = 0; i < sm.Nimp; i++)
     {
         for (int j = 0; j < sm.Nimp; j++)
-            printf ("%10.7f\t", hub.P(sm.frag[i], sm.frag[j]));
+            printf ("%10.7f\t", hub.P(sm.fragsite[i], sm.fragsite[j]));
         cout << "\n";
     }   cout << "\n";
     cout << "T^{dagger} P_tot T:\n" << sm.T.transpose () * hub.P * sm.T << "\n\n";

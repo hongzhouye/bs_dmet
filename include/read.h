@@ -16,7 +16,6 @@
 
 /* FOR dmet */
 #include "hubbard.h"
-#include "schmidt.h"
 #include "frag.h"
 #include "hf.h"
 
@@ -71,7 +70,7 @@ vs _split_eq_ (string line)
     return nv;
 }
 
-void _read_ (char *fname, HUBBARD& hub, SCHMIDT& sm, FRAG& frag)
+void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
 {
 	int i;
 	string line;

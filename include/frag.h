@@ -10,7 +10,7 @@ class FRAG
 {
     public:
         int Nimp;           // # of sites
-        fmap fragments;     // map <fragname, fragindex>
+        msi fragments;      // map<string, int>
 
         int Ncenter;        // # of center sites
         int *center;        // index of center site
