@@ -28,7 +28,7 @@ class HUBBARD
 	public:
 		int N, K;
 		double U;
-		char BC;
+		string BC;
 		VectorXd n, e;
 		MatrixXd h, F, occ, C, P;
 		void _init_ ();
@@ -60,7 +60,7 @@ void HUBBARD::_init_ ()
 	// setup h matrix
 	for (int mu = 0; mu < K - 1; mu ++)
 		h (mu, mu + 1) = h (mu + 1, mu) = -1.;
-	h (0, K - 1) = h (K - 1, 0) = (BC == 'a') ? (1.) : (-1.);
+	h (0, K - 1) = h (K - 1, 0) = (BC == "a") ? (1.) : (-1.);
 }
 
 // solve the Hubbard model for the translational symmetric case

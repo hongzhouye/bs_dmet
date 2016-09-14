@@ -8,6 +8,7 @@
 #include "schmidt.h"
 #include "hred.h"
 #include "dfci.h"
+#include "frag.h"
 #include "scf.h"
 #include "read.h"
 
@@ -18,6 +19,7 @@ class DMET
 {
     public:
         HUBBARD hub;
+        FRAG frag;
         SCHMIDT sm;
         HRED hr;
         void _dmet_init_ (char *);
@@ -30,26 +32,59 @@ class DMET
 void DMET::_dmet_init_ (char *fname)
 {
     // read parameters from the input file
-    _read_ (fname, hub, sm);
+    _read_ (fname, hub, sm, frag);
 
     // set up ioff -- the lookup table
-	int K = sm.Nimp * 2;
+	int K = frag.Nimp * 2;
 	_gen_ioff_ (K * (K + 1) / 2);
 
     // Hubbard Hartree-Fock calculation
-	hub._hubbard_rhf_ ();
+	//hub._hubbard_rhf_ ();
     //hub._print_ ();
 
     // Schmidt
-	sm._schmidt_ (hub);
+	//sm._schmidt_ (hub);
     //sm._print_ (hub);
 
 	// Construct Hred
-	hr._xform_ (hub, sm);
+	//hr._xform_ (hub, sm);
 }
 
 void DMET::_dmet_check_ ()
 {
+    cout << "=======================" << endl;
+    cout << "|      read check     |" << endl;
+    cout << "=======================" << endl;
+
+    printf ("%d\t%d\t%f\n\n", hub.K, hub.N, hub.U);
+    cout << "Nimp: " << frag.Nimp << "\n";
+    for (auto i = frag.fragments.begin (); i != frag.fragments.end (); i++)
+        cout << i->first << ": " << i->second << "\n";
+    cout << "\n";
+    cout << "Ncenter: " << frag.Ncenter << "\n";
+    for (int i = 0; i < frag.Ncenter; i++)
+        cout << frag.center[i] << "\n";
+    cout << "\n";
+    cout << "Npop: " << frag.Npop << "\n";
+    for (int i = 0; i < frag.Npop; i++)
+    {
+        for (int j = 0; j < frag.popcon[i].size (); j++)
+            cout << i << ", " << j << ": " << frag.popcon[i][j] << "\n";
+        cout << endl;
+    }
+    cout << "N2e: " << frag.N2e << "\n";
+    for (int i = 0; i < frag.N2e; i++)
+    {
+        for (int j = 0; j < frag.bad_2econ[i].size (); j++)
+            cout << "bad " << i << ", " << j << ": " << frag.bad_2econ[i][j] << "\n";
+        for (int j = 0; j < frag.good_2econ[i].size (); j++)
+            cout << "good " << i << ", " << j << ": " << frag.good_2econ[i][j] << "\n";
+        cout << endl;
+    }
+
+    cout << "=======================" << endl;
+    cout << "|       HF-in-HF      |" << endl;
+    cout << "=======================" << endl;
     SCF scf;
     scf._init_ (hr.h, hr.V, hr.Ni, hr.Ni / 2);
     scf._guess_ ("core");
@@ -57,6 +92,9 @@ void DMET::_dmet_check_ ()
     printf ("HF-in-HF embedding energy: %18.16f\n\n",
 		_dmet_energy_ (scf.h, scf.V, scf.P, scf.N));
 
+    cout << "=======================" << endl;
+    cout << "|      FCI-in-HF      |" << endl;
+    cout << "=======================" << endl;
     DFCI dfci;
     dfci._init_ (hr);
     cout << "FCI initialization succeeds!\n" << dfci.tot <<

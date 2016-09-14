@@ -3,6 +3,9 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <map>
 
 using namespace Eigen;
 using namespace std;
@@ -15,6 +18,11 @@ using namespace std;
 #define esXd SelfAdjointEigenSolver<MatrixXd>
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 #define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
+
+typedef map<string, int> fmap;
+typedef vector<string> vs;
+typedef vector<int> vi;
+typedef vector<vector<int> > vvi;
 
 int *ioff;		// lookup table for compound indices
 

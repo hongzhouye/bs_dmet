@@ -1,10 +1,25 @@
-hubbard
-8
-4
-a
-4
+&hubbard
 
-schmidt
-2
-0
+K = 8
+N = 4
+BC = a
+U = 4
+
+&end hubbard
+
+&fragment
+Nimp = 3
+0 0
+1 1
+2 2
+
+Center = 1
+
+Npop = 2
+0;2
 1
+
+N2e = 1
+0;2 1
+
+&end fragment
