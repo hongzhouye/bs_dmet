@@ -385,12 +385,12 @@ void DFCI::_dfci_ ()
 	int iter = 1, i;
 	VectorXd q (tot * tot), precond (tot * tot);
 	double temp, offset;
-	cout << "iter\terror" << endl;
+	//cout << "iter\terror" << endl;
 	while (iter < MAX_DVDS_ITER)
 	{
 		q = (s - lambda * b) * alpha;
 		if (q.norm () < DVDS_CONV)	break;
-		else	cout << iter << "\t" << q.norm () << "\n";
+		else	//cout << iter << "\t" << q.norm () << "\n";
 
 		// offset preconditioner to avoid singularity
 		if (iter < 3)	offset = 1e-14;	else	offset = 0.;
@@ -425,13 +425,13 @@ void DFCI::_dfci_ ()
 	}
 	if (iter >= MAX_DVDS_ITER)	// if not converged
 	{
-		cout << "\nDavidson diagonalization failed to converge!\n";
+		//cout << "\nDavidson diagonalization failed to converge!\n";
 		return;
 	}
 
-	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
+	//cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
 	MatrixXd v = b * alpha;	C_fci = v;
-	cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
+	//cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
 	//printf ("FCI energy is %18.16f\n\n", lambda);	// no need to print out this value
 
 	iter ++;
