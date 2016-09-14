@@ -5,7 +5,6 @@
 #include <iostream>
 #include <cstdio>
 #include "hf.h"
-#include "hred.h"
 #include "ab_string.h"
 
 using namespace Eigen;
@@ -38,7 +37,7 @@ class DFCI
 		AB_STRING *astr;// only one is enough for Ms = 0
 						// and spin-restricted case
 						// see the FCI ref above
-		void _init_ (HRED&);
+		void _init_ (const MatrixXd&, double *, int, int);
 		void _dfci_ ();
 		void _1PDM_ ();
 		void _2PDM_ ();
@@ -95,34 +94,24 @@ void DFCI::_str_gen_ (AB_STRING *as, int init, int n, long int *cnt)
 		}
 }
 
-void DFCI::_init_ (HRED& hr)
+void DFCI::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
 {
 	int i, j, k, l, ij, kl, ijkl;
 
-	K = hr.Ni;	N = K / 2;
+	K = Nbs;	N = Ne;
 	int lenh = K * (K + 1) / 2;
 	int lenV = lenh * (lenh + 1) / 2;
 	h = _darray_gen_ (lenh);
 	V = _darray_gen_ (lenV);
 
-	// set up the lookup table 'ioff'
-	/*ioff = new int [lenh + 1];
-	if (ioff == NULL)
-	{
-		cout << "failed to malloc memory for array ioff!\n";
-		exit (1);
-	}
-	ioff[0] = 0;
-	for (i = 1; i < lenh + 1; i++)	ioff[i] = ioff[i - 1] + i;*/
-
 	// set up h and V
 	int ik, kj;
-	for (i = 0; i < lenV; i++)	V[i] = hr.V[i];
+	for (i = 0; i < lenV; i++)	V[i] = Vinp[i];
 	for (i = 0; i < K; i++)
 		for (j = 0; j <= i; j++)
 		{
 			ij = cpind(i,j);
-			h[ij] = hr.h (i, j);
+			h[ij] = hinp(i, j);
 			for (k = 0; k < K; k++)
 			{
 				ik = cpind(i,k);

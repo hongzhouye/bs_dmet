@@ -12,13 +12,13 @@ class HRED
 {
 	public:
 		int Ni;			// 2 * Nimp
-		MatrixXd h;
-		double *V;
-		void _xform_ (HUBBARD&, SCHMIDT&);
-		void _write_ ();
+		//MatrixXd h;
+		//double *V;
+		void _xform_ (const HUBBARD&, const SCHMIDT&, MatrixXd&, double *);
 };
 
-void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
+void HRED::_xform_ (const HUBBARD& hub, const SCHMIDT& sm,
+	MatrixXd& h, double *V)
 {
 	int i, j, k, l, mu, ij, kl, ijkl;
 	MatrixXd T = sm.T;
@@ -32,8 +32,6 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 	// Vimp
 	Ni = 2 * sm.Nimp;
 
-	int lenh = Ni * (Ni + 1) / 2, lenV = lenh * (lenh + 1) / 2;
-	V = _darray_gen_ (lenV);
 	for (i = 0; i < Ni; i++)
 		for (j = 0; j <= i; j++)
 		{
@@ -51,20 +49,4 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 				}
 		}
 }
-
-void HRED::_write_ ()
-{
-	int i, j, k, l;
-	FILE *ph = fopen ("h", "w+");
-	FILE *pV = fopen ("V", "w+");
-	for (i = 0; i < Ni; i++)
-		for (j = 0; j < Ni; j++)
-		{
-			fprintf (ph, "%d;%d;%18.16f\n", i, j, h(i, j));
-			for (k = 0; k < Ni; k++)
-				for (l = 0; l < Ni; l++)
-					fprintf (pV, "%d;%d;%d;%d;%18.16f\n", i, j, k, l, V[index4(i,j,k,l,Ni)]);
-		}
-}
-
 #endif

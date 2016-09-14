@@ -5,8 +5,8 @@
 #include <cstdio>
 #include <Eigen/Dense>
 #include "hf.h"
-#include "schmidt.h"
-#include "hred.h"
+//#include "schmidt.h"
+//#include "hred.h"
 #include "dfci.h"
 #include "frag.h"
 #include "scf.h"
@@ -20,8 +20,6 @@ class DMET
     public:
         HUBBARD hub;
         FRAG frag;
-        SCHMIDT sm;
-        HRED hr;
         void _dmet_init_ (char *);
         void _dmet_iter_ ();
         void _dmet_check_ ();
@@ -42,13 +40,16 @@ void DMET::_dmet_init_ (char *fname)
 	hub._hubbard_rhf_ ();
     //hub._print_ ();
 
+    // Fragment Initialization
+    frag._init_ (hub);
+
     // Schmidt
-    sm._init_ (hub, frag);
-	sm._schmidt_ (hub);
+    //sm._init_ (hub, frag);
+	//sm._schmidt_ (hub);
     //sm._print_ ();
 
 	// Construct Hred
-	hr._xform_ (hub, sm);
+	//hr._xform_ (hub, sm);
 }
 
 void DMET::_dmet_check_ ()
@@ -88,17 +89,17 @@ void DMET::_dmet_check_ ()
     cout << "|       HF-in-HF      |" << endl;
     cout << "=======================" << endl;
     SCF scf;
-    scf._init_ (hr.h, hr.V, hr.Ni, hr.Ni / 2);
+    scf._init_ (frag.h, frag.V, 2 * frag.Nimp, frag.Nimp);
     scf._guess_ ("core");
     scf._scf_ ();
     printf ("HF-in-HF embedding energy: %18.16f\n\n",
-		_dmet_energy_ (scf.h, scf.V, scf.P, scf.N));
+		_dmet_energy_ (frag.h, frag.V, scf.P, scf.N));
 
     cout << "=======================" << endl;
     cout << "|      FCI-in-HF      |" << endl;
     cout << "=======================" << endl;
     DFCI dfci;
-    dfci._init_ (hr);
+    dfci._init_ (frag.h, frag.V, 2 * frag.Nimp, frag.Nimp);
     cout << "FCI initialization succeeds!\n" << dfci.tot <<
 		" alpha strings are generated!\n\n";
 	dfci._dfci_ ();
@@ -106,17 +107,17 @@ void DMET::_dmet_check_ ()
 	cout << "scf 1PDM:\n" << scf.P << "\n\n";
 	cout << "dfci 1PDM:\n" << dfci.P << "\n\n";
     cout << "P_tot, fragment block:\n";
-    for (int i = 0; i < sm.Nimp; i++)
+    for (int i = 0; i < frag.Nimp; i++)
     {
-        for (int j = 0; j < sm.Nimp; j++)
-            printf ("%10.7f\t", hub.P(sm.fragsite[i], sm.fragsite[j]));
+        for (int j = 0; j < frag.Nimp; j++)
+            printf ("%10.7f\t", hub.P(frag.sm.frag[i], frag.sm.frag[j]));
         cout << "\n";
     }   cout << "\n";
-    cout << "T^{dagger} P_tot T:\n" << sm.T.transpose () * hub.P * sm.T << "\n\n";
+    cout << "T^{dagger} P_tot T:\n" << frag.sm.T.transpose () * hub.P * frag.sm.T << "\n\n";
 	//cout << "check idempotency:\n" << hred_scf.P * hred_scf.P << "\n\n";
 	dfci._2PDM_ ();
 	printf ("FCI-in-HF embedding energy: %18.16f\n\n",
-			_dmet_energy_ (hr.h, scf.V, dfci.P, dfci.G, dfci.N));
+			_dmet_energy_ (frag.h, frag.V, dfci.P, dfci.G, dfci.N));
 }
 
 void DMET::_dmet_iter_ ()
@@ -135,26 +136,6 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
             E += h(mu, nu) * P(nu, mu);
     E *= 2.;
 
-    // Szabo89book page 141
-    /*int ml, ns;
-    for (mu = 0; mu < N; mu++)
-        for (nu = 0; nu < K; nu++)
-        {
-            mn = cpind(mu,nu);
-            for (la = 0; la < K; la++)
-            {
-                ml = cpind(mu,la);
-                for (si = 0; si < K; si++)
-                {
-                    ls = cpind(si,la);  ns = cpind(si,nu);
-                    E += P(nu, mu) * P(la, si) *
-                        (2. * V[cpind(mn,ls)] -
-                        V[cpind(ml,ns)]);
-                }
-            }
-        }
-    */
-
     // CHECK: mean-field 2PDM
     int lenh = K * (K + 1) / 2;
     int lenV = lenh * (lenh + 1) / 2;
@@ -167,25 +148,9 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                 for (la = 0; la < K; la++)
                 {
                     ls = cpind(la,si);
-                    //if (ls <= mn)
                     G[cpind(mn,ls)] += 2. * P(nu, mu) * P(la, si) - P(la, mu) * P(nu, si);
                 }
         }
-
-    // CHECK
-    /*int ml, ns;
-    for (mu = 0; mu < K; mu++)
-        for (nu = 0; nu < K; nu++)
-            for (la = 0; la < K; la++)
-            {
-                ml = cpind(mu,la);
-                for (si = 0; si < K; si++)
-                {
-                    ns = cpind(nu,si);
-                    printf ("%d;%d;%d;%d;%18.16f\n", mu, nu, la, si, G[cpind(ml,ns)]);
-                }
-            }
-    */
 
     for  (mu = 0; mu < K; mu++)
         for (nu = 0; nu < N; nu++)
@@ -202,7 +167,6 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
     return E;
 }
 
-
 // for correlated case where 2PDM Gamma is needed too
 double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int N)
 {
@@ -212,20 +176,8 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
             E1 += h(mu, nu) * P(nu, mu);
-    E1 /= (sm.Nimp / 2.);
+    E1 /= (N / 2.);
     printf ("One electron part: %18.16f\n\n", E1);
-
-    // old storage style of V and G
-    /*for (mu = 0; mu < N; mu++)
-        for (nu = 0; nu < K; nu++)
-            for (la = 0; la < K; la++)
-                for (si = 0; si < K; si++)
-                {
-                    //cout << G[index4(mu,nu,la,si,K)] * V[index4(mu,nu,la,si,K)] << "\n";
-                    //printf ("%d;%d;%d;%d;%d\n", mu, nu, la, si, index4(mu,nu,la,si,K));
-                    E += G[index4(mu,nu,la,si,K)] * V[index4(mu,nu,la,si,K)];
-                }
-    */
 
     // new storage style
     int mn, ls;
@@ -240,7 +192,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
                     E2 += G[cpind(mn,ls)] * V[cpind(mn,ls)];
                 }
         }
-    E2 /= sm.Nimp;
+    E2 /= N;
     printf ("Two electron part: %18.16f\n\n", E2);
 
     return E1 + E2;

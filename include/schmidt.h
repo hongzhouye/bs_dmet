@@ -4,7 +4,6 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include "hubbard.h"
-#include "frag.h"
 #include "hf.h"
 
 using namespace std;
@@ -16,25 +15,22 @@ class SCHMIDT
 		void _form_xform_mat_ ();
 	public:
 		int K, N, Nimp;
-		int *fragsite;
+		int *frag;
 		MatrixXd W;				// M = W * d * W^T
 		VectorXd d;				// Singular values
 		MatrixXd C;				// W-transformed C's
 		MatrixXd T, TE;
-		void _init_ (const HUBBARD&, const FRAG&);
+		void _init_ (const HUBBARD&, int);
 		void _schmidt_ (const HUBBARD&);
 		MatrixXd _make_P_frag_ (HUBBARD&);
 		void _print_ ();
 };
 
-void SCHMIDT::_init_ (const HUBBARD& hub, const FRAG& frag)
+void SCHMIDT::_init_ (const HUBBARD& hub, int fragNimp)
 {
 	K = hub.K;	N = hub.N;
-	Nimp = frag.Nimp;
-	fragsite = _iarray_gen_ (Nimp);
-	int count = 0;
-	for (auto i = frag.fragments.begin (); i != frag.fragments.end (); i++)
-		fragsite[count++] = i->second;
+	Nimp = fragNimp;
+	frag = _iarray_gen_ (Nimp);
 }
 
 void SCHMIDT::_schmidt_ (const HUBBARD& hub)
@@ -42,7 +38,7 @@ void SCHMIDT::_schmidt_ (const HUBBARD& hub)
 	// prefix 'r' for raw (i.e. untransformed)
 	MatrixXd rCF;	rCF.setZero (Nimp, N);
 	for (int i = 0; i < Nimp; i++)
-		rCF.row (i) = hub.C.block (fragsite[i], 0, 1, N);
+		rCF.row (i) = hub.C.block (frag[i], 0, 1, N);
 
 	MatrixXd M;
 	M = rCF.transpose () * rCF;
@@ -65,8 +61,8 @@ void SCHMIDT::_form_xform_mat_ ()
 	for (i = 0; i < Nimp; i++)	T.col (i + Nimp) /= sqrt (1. - d(i));
 	for (i = 0; i < Nimp; i++)
 	{
-		T.block (fragsite[i], 0, 1, 2 * Nimp).setZero ();
-		T(fragsite[i], i) = 1.;		// set C^{F} to eye(Nimp)
+		T.block (frag[i], 0, 1, 2 * Nimp).setZero ();
+		T(frag[i], i) = 1.;		// set C^{F} to eye(Nimp)
 								// see Knizia13JCTC, Bulik14PRB
 	}
 	TE = C.rightCols (N - Nimp);
