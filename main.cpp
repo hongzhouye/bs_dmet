@@ -17,7 +17,7 @@ int main (int argc, char * argv[])
 	else	{cout << "Too many input files!\n";	exit (1);}
 
 	// check
-	dmet._dmet_check_ ();
+	//dmet._dmet_check_ ();
 
 	return 0;
 }

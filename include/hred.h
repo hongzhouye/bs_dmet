@@ -28,9 +28,6 @@ void HRED::_xform_ (HUBBARD& hub, SCHMIDT& sm)
 
 	// himp
 	h = T.transpose () * (hub.h + hc) * T;
-	//cout << "test:\n" << T.transpose () * hub.h * T << "\n\n";
-
-	cout << "himp :\n" << h << "\n\n";
 
 	// Vimp
 	Ni = 2 * sm.Nimp;
