@@ -2,13 +2,17 @@
 #define _SCHMIDT_H_INCLUDED_
 
 #include <Eigen/Dense>
+#include <iostream>
 #include "hubbard.h"
 #include "hf.h"
 
+using namespace std;
 using namespace Eigen;
 
 class SCHMIDT
 {
+	private:
+		void _form_xform_mat_ ();
 	public:
 		int K, N, Nimp;
 		int *frag;
@@ -18,7 +22,8 @@ class SCHMIDT
 		MatrixXd T, TE;
 		//SCHMIDT (char*, HUBBARD&);
 		void _schmidt_ (HUBBARD&);
-		void _form_xform_mat_ ();
+		MatrixXd _make_P_frag_ (HUBBARD&);
+		void _print_ ();
 };
 
 void SCHMIDT::_schmidt_ (HUBBARD& hub)
@@ -34,12 +39,9 @@ void SCHMIDT::_schmidt_ (HUBBARD& hub)
 	M = rCF.transpose () * rCF;
 
 	_eigh_ (M, W, d);	_revert_ (W, d);
-	//cout << "M:\n" << M << "\n\n";
-	//cout << "W:\n" << W << "\n\n";
-	cout << "Eigenvalues of the projection matrix:\n" << d.transpose () << "\n\n";
 
 	C = hub.C.leftCols (N) * W;
-	cout << "Schmidt decomposed C:\n" << C << "\n\n";
+	//cout << "Schmidt decomposed C:\n" << C << "\n\n";
 
 	_form_xform_mat_ ();
 }
@@ -59,10 +61,18 @@ void SCHMIDT::_form_xform_mat_ ()
 								// see Knizia13JCTC, Bulik14PRB
 	}
 	TE = C.rightCols (N - Nimp);
+}
 
-	cout << "C:\n" << C << "\n\n";
-	cout << "T:\n" << T << "\n\n";
-	cout << "TE:\n" << TE << "\n\n";
+MatrixXd SCHMIDT::_make_P_frag_ (HUBBARD& hub)
+{
+	return T.transpose () * hub.P * T;
+}
+
+void SCHMIDT::_print_ ()
+{
+	cout << "Eigenvalues:\t" << d.transpose () << "\n\n";
+	cout << "T\n" << T << "\n\n";
+	cout << "TE\n" << TE << "\n\n";
 }
 
 #endif

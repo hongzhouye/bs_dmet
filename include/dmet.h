@@ -38,10 +38,11 @@ void DMET::_dmet_init_ (char *fname)
 
     // Hubbard Hartree-Fock calculation
 	hub._hubbard_rhf_ ();
-    hub._print_ ();
+    //hub._print_ ();
 
     // Schmidt
 	sm._schmidt_ (hub);
+    //sm._print_ (hub);
 
 	// Construct Hred
 	hr._xform_ (hub, sm);
