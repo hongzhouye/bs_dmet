@@ -158,12 +158,9 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
                             for (int j = 0; j < badstr.size (); j++)
                                 tempbad.push_back (frag.fragments[badstr[j]]);
                             frag.bad_2econ.push_back (tempbad);
-                            // good sites
-                            vs goodstr = _split_ (templine[1], ';');
-                            vi tempgood;
-                            for (int j = 0; j < goodstr.size (); j++)
-                                tempgood.push_back (frag.fragments[goodstr[j]]);
-                            frag.good_2econ.push_back (tempgood);
+                            // good sites (always one site!!! No need to split.)
+                            string goodstr = templine[1];
+                            frag.good_2econ.push_back (frag.fragments[goodstr]);
                         }
                     }
                     else if (_uppercase_ (line) == "&END FRAGMENT") break;

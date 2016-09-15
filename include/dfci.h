@@ -21,10 +21,11 @@ class DFCI
 	private:
 		int _str_match_ (short *, short *, short *);
 		void _str_gen_ (AB_STRING *, int, int, long int *);
-		void _dfci_initguess_ (MatrixXd&, string);
+		void _dfci_initguess_ (MatrixXd&);
 		VectorXd _diagH_ ();
 		VectorXd _Hx_ (MatrixXd&, int);
 	public:
+		string mode;
 		int K;			// basis set size
 		int N;			// # of e^-
 		long int tot;	// total # of configurations
@@ -200,11 +201,12 @@ void DFCI::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
 }
 
 // davidson
-void DFCI::_dfci_initguess_ (MatrixXd& b, string mode)
+void DFCI::_dfci_initguess_ (MatrixXd& b)
 {
 	if (mode == "random")		b.setRandom ();
 	else if (mode == "ones")	b.setOnes ();
 	else if (mode == "major")	{b.setZero ();	b(0, 0) = 1.;}
+	else if (mode == "read")	b = C_fci;
 	b.col(0).normalize ();
 }
 
@@ -354,7 +356,7 @@ void DFCI::_dfci_ ()
 {
 	// initial setup
 	MatrixXd b (tot * tot, 1);
-	_dfci_initguess_ (b, "major");
+	_dfci_initguess_ (b);
 	MatrixXd s (tot * tot, 1);
 	s.col(0) = _Hx_ (b, 0);
 	MatrixXd At = b.transpose () * s;

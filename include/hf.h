@@ -19,6 +19,9 @@ using namespace std;
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 #define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
 
+IOFormat HeavyFmt(12, 0, "\t", ";\n");
+IOFormat Short(8, 0, ", ", "\n", "[", "]");
+
 typedef map<string, int> msi;
 typedef vector<string> vs;
 typedef vector<int> vi;

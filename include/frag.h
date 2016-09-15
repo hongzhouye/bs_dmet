@@ -9,6 +9,9 @@
 class FRAG
 {
     public:
+        int Nopt;           // tot # of constraints
+        double target_filling;
+
         int Nimp;           // # of sites
         msi fragments;      // map<string, int>
 
@@ -21,15 +24,19 @@ class FRAG
 
         int N2e;            // # of 2e on-top constraints
         vvi bad_2econ;      // to be matched
-        vvi good_2econ;     // matching target
+        vi good_2econ;      // matching target
 
-        MatrixXd h;         // 1P part of Hamiltonian
-        double *V;          // 2P part of Hamiltonian
+        MatrixXd h, hpot;   // 1P part of Hamiltonian
+        double *V, *Vpot, *Vtot;
+                            // 2P part of Hamiltonian
+        int lenV;
 
         SCHMIDT sm;
         HRED hr;
+        DFCI dfci;
 
         void _init_ (const HUBBARD&);
+        void _solver_ (bool);
 };
 
 void FRAG::_init_ (const HUBBARD& hub)
@@ -37,8 +44,12 @@ void FRAG::_init_ (const HUBBARD& hub)
     // set up h and V
     int Ni = 2 * Nimp;
     h.setZero (Ni, Ni);
-    int lenh = Ni * (Ni + 1) / 2, lenV = lenh * (lenh + 1) / 2;
+    hpot.setZero (Ni, Ni);
+    int lenh = Ni * (Ni + 1) / 2;
+    lenV = lenh * (lenh + 1) / 2;
 	V = _darray_gen_ (lenV);
+    Vpot = _darray_gen_ (lenV);
+    Vtot = _darray_gen_ (lenV);
 
     // set up sm
     sm._init_ (hub, Nimp);
@@ -51,5 +62,23 @@ void FRAG::_init_ (const HUBBARD& hub)
 
     // make hred
     hr._xform_ (hub, sm, h, V);
+
+    // solver
+    dfci.mode = "major";
+
+    // tot # of constraints
+    Nopt = Npop + N2e;
+
+    // target_filling
+    target_filling = (double) hub.N / hub.K;
+}
+
+void FRAG::_solver_ (bool _2PDM_flag_)
+{
+    for (int i = 0; i < lenV; i++)  Vtot[i] = V[i] + Vpot[i];
+    dfci._init_ (h + hpot, Vtot, 2 * Nimp, Nimp);
+    dfci._dfci_ ();
+    dfci._1PDM_ ();
+    if (_2PDM_flag_)    dfci._2PDM_ ();
 }
 #endif
