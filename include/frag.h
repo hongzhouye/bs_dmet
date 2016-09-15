@@ -22,6 +22,10 @@ class FRAG
         vvi popcon;         // popcon[i][j]: the i-th constr
                             // is applied to pop of site j
 
+        int N1e;            // # of 1e coherence constraints
+        vvis bad_1econ;     // to be matched
+        vis good_1econ;     // matching target
+
         int N2e;            // # of 2e on-top constraints
         vvi bad_2econ;      // to be matched
         vi good_2econ;      // matching target

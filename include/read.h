@@ -107,6 +107,7 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
 			{
                 while (getline (input, line))
                 {
+                    // empty line is ignored
                     if (line.empty ())  continue;
                     // Nimp & frag sites
                     else if (_uppercase_ (_split_ (line, ' ')[0]) == "NIMP")
@@ -145,6 +146,34 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
                             frag.popcon.push_back (tempvi);
                         }
                     }
+                    // 1-electron coherence
+                    else if (_uppercase_ (_split_ (line, ' ')[0]) == "N1E")
+                    {
+                        frag.N1e = stoi (_split_eq_ (line)[1]);
+                        for (int i = 0; i < frag.N1e; i++)
+                        {
+                            getline (input, line);
+                            vs templine = _split_ (line, ' ');
+                            // bad sites
+                            vs badstr = _split_(templine[0], ';');
+                            vis tempbad;
+                            for (int j = 0; j < badstr.size (); j++)
+                            {
+                                int *p = _iarray_gen_ (2);
+                                p[0] = stoi (_split_ (badstr[j], ':')[0]);
+                                p[1] = stoi (_split_ (badstr[j], ':')[1]);
+                                tempbad.push_back (p);
+                            }
+                            frag.bad_1econ.push_back (tempbad);
+                            // good sites
+                            string goodstr = templine[1];
+                            int *p = _iarray_gen_ (2);
+                            p[0] = stoi (_split_ (goodstr, ':')[0]);
+                            p[1] = stoi (_split_ (goodstr, ':')[1]);
+                            frag.good_1econ.push_back (p);
+                        }
+                    }
+                    // 2-electron on-top density
                     else if (_uppercase_ (_split_ (line, ' ')[0]) == "N2E")
                     {
                         frag.N2e = stoi (_split_eq_ (line)[1]);

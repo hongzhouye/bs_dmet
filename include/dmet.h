@@ -190,13 +190,24 @@ void DMET::_dmet_check_ ()
             cout << i << ", " << j << ": " << bs.frag.popcon[i][j] << "\n";
         cout << endl;
     }
+    cout << "N1e: " << bs.frag.N1e << "\n";
+    for (int i = 0; i < bs.frag.N1e; i++)
+    {
+        for (int j = 0; j < bs.frag.bad_1econ[i].size (); j++)
+            cout << "bad " << i << ", " << j << ": ("
+                << bs.frag.bad_1econ[i][j][0]
+                << bs.frag.bad_1econ[i][j][1] << ")\n";
+        cout << "good " << i << ": ("
+            << bs.frag.good_1econ[i][0]
+            << bs.frag.good_1econ[i][1] << ")\n";
+        cout << endl;
+    }
     cout << "N2e: " << bs.frag.N2e << "\n";
     for (int i = 0; i < bs.frag.N2e; i++)
     {
         for (int j = 0; j < bs.frag.bad_2econ[i].size (); j++)
             cout << "bad " << i << ", " << j << ": " << bs.frag.bad_2econ[i][j] << "\n";
-        //for (int j = 0; j < bs.frag.good_2econ[i].size (); j++)
-        //    cout << "good " << i << ", " << j << ": " << bs.frag.good_2econ[i][j] << "\n";
+        cout << "good " << i << ": " << bs.frag.good_2econ[i] << "\n";
         cout << endl;
     }
 

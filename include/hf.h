@@ -26,6 +26,8 @@ typedef map<string, int> msi;
 typedef vector<string> vs;
 typedef vector<int> vi;
 typedef vector<vector<int> > vvi;
+typedef vector<vector<int *> > vvis;
+typedef vector<int *> vis;
 
 int *ioff;		// lookup table for compound indices
 
