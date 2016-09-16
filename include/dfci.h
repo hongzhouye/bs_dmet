@@ -24,6 +24,7 @@ class DFCI
 		void _dfci_initguess_ (MatrixXd&);
 		VectorXd _diagH_ ();
 		VectorXd _Hx_ (MatrixXd&, int);
+		void _GS_ (VectorXd&, const MatrixXd&);
 	public:
 		string mode;
 		int K;			// basis set size
@@ -352,6 +353,20 @@ VectorXd DFCI::_Hx_ (MatrixXd& b, int col)
 	return s;
 }
 
+void DFCI::_GS_ (VectorXd& b, const MatrixXd& A)
+// Schmidt orthonormalize b to columns of A
+{
+	int n = A.cols ();
+	double temp;
+	for (int i = 0; i < n; i++)
+	{
+		const VectorXd& q = A.col (i);
+		temp = q.transpose () * b;
+		b = b - temp * q;
+	}
+	b.normalize ();
+}
+
 void DFCI::_dfci_ ()
 {
 	// initial setup
@@ -364,38 +379,30 @@ void DFCI::_dfci_ ()
 	VectorXd alpha (1);	alpha (0) = 1.;
 	VectorXd diagH = _diagH_ ();
 
-	// CHECK
-	/*double dgH[tot * tot];	int kk;
-	for (kk = 0; kk < tot * tot; kk++)	dgH[kk] = diagH(kk);
-	sort (&dgH[0], &dgH[tot * tot]);
-	cout << "diagH:\n";
-	for (kk = 0; kk < tot * tot; kk++)	printf ("%18.16f\n", dgH[kk]);
-	*/
-
 	// Davidson iteration (see Davidson ref above)
 	int iter = 1, i;
 	VectorXd q (tot * tot), precond (tot * tot);
-	double temp, offset;
+	double error, temp, offset, beta = 1.;
 	//cout << "iter\terror" << endl;
 	while (iter < MAX_DVDS_ITER)
 	{
-		q = (s - lambda * b) * alpha;
-		if (q.norm () < DVDS_CONV)	break;
-		else	//cout << iter << "\t" << q.norm () << "\n";
+		C_fci = b * alpha;
+		q = s * alpha - lambda * C_fci;
+		error = q.norm ();
+		if (error < DVDS_CONV)	break;
+		else	//cout << iter << "\t" << error << "\n";
 
 		// offset preconditioner to avoid singularity
 		if (iter < 3)	offset = 1e-14;	else	offset = 0.;
-		precond = VectorXd::Constant (tot * tot, lambda + offset) - diagH;
-		//cout << "q(0) = " << q(0) << "\tprec(0) = " << precond(0) << "\n\n";
+		// Davidson preconditioner
+		//precond = VectorXd::Constant (tot * tot, lambda + offset) - diagH;
+		// Bendazzoli preconditioner
+		precond = VectorXd::Constant (tot * tot, lambda) - diagH
+			+ C_fci.cwiseProduct (2. * q - beta * C_fci);
 		q = q.cwiseQuotient (precond);
 
 		// Schmidt orthonormalization
-		for (i = 0; i < iter; i++)
-		{
-			temp = b.col(i).transpose () * q;
-			q = q - temp * b.col(i);
-		}
-		q.normalize ();
+		_GS_ (q, b);
 		b.conservativeResize (tot * tot, iter + 1);	b.col(iter) = q;
 		s.conservativeResize (tot * tot, iter + 1);	s.col(iter) = _Hx_ (b, iter);
 
@@ -416,11 +423,13 @@ void DFCI::_dfci_ ()
 	}
 	if (iter >= MAX_DVDS_ITER)	// if not converged
 	{
-		//cout << "\nDavidson diagonalization failed to converge!\n";
+		cout << "\nDavidson diagonalization failed to converge!\t"
+			<< error << "\n\n";
 		return;
 	}
-
-	//cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
+	//CHECK
+	//cout << "guess mode = " << mode << "\titer = " << iter << endl << endl;
+	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
 	MatrixXd v = b * alpha;	C_fci = v;
 	//cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
 	//printf ("FCI energy is %18.16f\n\n", lambda);	// no need to print out this value

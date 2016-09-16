@@ -1,6 +1,6 @@
 &hubbard
 
-K = 8
+K = 9 
 N = 4
 BC = a
 U = 4
@@ -10,14 +10,16 @@ U = 4
 &fragment
 Nimp = 3
 0 0
-1 2
-2 4
+1 1
+2 2
 
 Center = 1
 
 Npop = 2
 0;2
 1
+
+N1e = 0
 
 N2e = 1
 0;2 1

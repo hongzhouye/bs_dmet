@@ -11,7 +11,7 @@
 #define DX_TOL 1.E-9
 #define FX_TOL 1.E-5
 #define MAX_STEP 10.
-#define JAC_EPS 1.E-5
+#define JAC_EPS 1.E-6
 
 MatrixXd _fd_Jac_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u, FRAG& frag)
 {
@@ -81,6 +81,7 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         u += scale * dx;
 
         printf ("Iteration: %d\n", iter);
+        cout << "Jacobian:\n" << J << "\n\n";
         cout << "x:  " << u.transpose ().format (Short) << "\t" << u.norm () << endl;
         cout << "dx: " << dx.transpose ().format (Short) << "\t" << dx.norm () << endl;
         cout << "fx: " << fx.transpose ().format (Short) << "\t" << fx.norm () << endl;

@@ -71,7 +71,7 @@ void FRAG::_init_ (const HUBBARD& hub)
     dfci.mode = "major";
 
     // tot # of constraints
-    Nopt = Npop + N2e;
+    Nopt = Npop + N1e + N2e;
 
     // target_filling
     target_filling = (double) hub.N / hub.K;

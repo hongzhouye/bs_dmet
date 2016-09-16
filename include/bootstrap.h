@@ -55,7 +55,19 @@ VectorXd _calc_obj_ (const FRAG& frag)
     {
         // when degenerate, only consider one of them
         int j = frag.popcon[i][0];
-        obj[shift] = frag.dfci.P (j, j) - frag.target_filling;
+        obj[shift] = frag.dfci.P(j, j) - frag.target_filling;
+        shift++;
+    }
+
+    // 1e coherence
+    for (int i = 0; i < frag.N1e; i++)
+    {
+        int goodi = frag.good_1econ[i][0];
+        int goodj = frag.good_1econ[i][1];
+        // when degenerate, only consider one of them
+        int badi = frag.bad_1econ[i][0][0];
+        int badj = frag.bad_1econ[i][0][1];
+        obj[shift] = frag.dfci.P(badi, badj) - frag.dfci.P(goodi, goodj);
         shift++;
     }
 
@@ -92,6 +104,20 @@ void _make_pot_ (const VectorXd& u, FRAG& frag)
         vi pc = frag.popcon[i];
         for (int j = 0; j < pc.size (); j++)
             frag.hpot(pc[j], pc[j]) = u[shift];
+        shift++;
+    }
+
+    // 1e coherence
+    for (int i = 0; i < frag.N1e; i++)
+    {
+        vis bad_1e = frag.bad_1econ[i];
+        for (int j = 0; j < bad_1e.size (); j++)
+        {
+            int indi = bad_1e[j][0];
+            int indj = bad_1e[j][1];
+            frag.hpot(indi, indj) += u[shift];
+            frag.hpot(indj, indi) += u[shift];
+        }
         shift++;
     }
 
