@@ -41,6 +41,7 @@ class DFCI
 						// see the FCI ref above
 		void _init_ (const MatrixXd&, double *, int, int);
 		void _dfci_ ();
+//		void _troyfci_ ();	// modified from Troy's code
 		void _1PDM_ ();
 		void _2PDM_ ();
 };
@@ -429,13 +430,24 @@ void DFCI::_dfci_ ()
 	}
 	//CHECK
 	//cout << "guess mode = " << mode << "\titer = " << iter << endl << endl;
-	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
+	//cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
 	MatrixXd v = b * alpha;	C_fci = v;
 	//cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
 	//printf ("FCI energy is %18.16f\n\n", lambda);	// no need to print out this value
 
 	iter ++;
 }
+
+/*void DFCI::_troyfci_ ()
+{
+	int N0;
+	if (tot < 10)	N0 = 3;
+	if (tot < 20)	N0 = 5;
+	else if (tot < 100)	N0 = 10;
+	else if (tot < 1000)	N0 = 10 + (int) tot / 25.;
+	else	N0 = 50;
+	VectorXd Hd = _diagH_ ();
+}*/
 
 // post-process
 void DFCI::_1PDM_ ()

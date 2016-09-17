@@ -41,6 +41,8 @@ VectorXd _dmet_iter_ (VectorXd& u, FRAG& frag)
     VectorXd _calc_obj_ (const FRAG&);
 
     _make_pot_ (u, frag);
+    /*cout << "u = " << u.transpose ().format (Short) << "\n";
+    cout << "hpot:\n" << frag.hpot.format (Short) << "\n\n";*/
     frag._solver_ (true);
     return _calc_obj_ (frag);
 }
@@ -115,8 +117,8 @@ void _make_pot_ (const VectorXd& u, FRAG& frag)
         {
             int indi = bad_1e[j][0];
             int indj = bad_1e[j][1];
-            frag.hpot(indi, indj) += u[shift];
-            frag.hpot(indj, indi) += u[shift];
+            frag.hpot(indi, indj) = u[shift];
+            frag.hpot(indj, indi) = u[shift];
         }
         shift++;
     }

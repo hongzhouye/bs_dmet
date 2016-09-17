@@ -11,7 +11,7 @@
 #define DX_TOL 1.E-9
 #define FX_TOL 1.E-5
 #define MAX_STEP 10.
-#define JAC_EPS 1.E-6
+#define JAC_EPS 1.E-4
 
 MatrixXd _fd_Jac_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u, FRAG& frag)
 {
@@ -32,6 +32,13 @@ MatrixXd _fd_Jac_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u, FRAG& frag)
         tempu = u - 2. * JAC_EPS * d;
         fbb  = (*func) (tempu, frag);
         J.col(i) = (-fff + 8. * ff - 8. * fb + fbb) / (12. * JAC_EPS);
+        // DEBUG
+        /*printf ("u[%d] = %10.7f\n", i, u(i));
+        cout << "ff = " << ff.transpose ().format (Short) << endl;
+        cout << "fff = " << fff.transpose ().format (Short) << endl;
+        cout << "fb = " << fb.transpose ().format (Short) << endl;
+        cout << "fbb = " << fbb.transpose ().format (Short) << endl;
+        cout << "J(:, i) = " << J.col(i).transpose ().format (Short) << endl;*/
     }
     return J;
 }
@@ -81,7 +88,8 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         u += scale * dx;
 
         printf ("Iteration: %d\n", iter);
-        cout << "Jacobian:\n" << J << "\n\n";
+        // DEBUG
+        //cout << "Jacobian:\n" << J << "\n\n";
         cout << "x:  " << u.transpose ().format (Short) << "\t" << u.norm () << endl;
         cout << "dx: " << dx.transpose ().format (Short) << "\t" << dx.norm () << endl;
         cout << "fx: " << fx.transpose ().format (Short) << "\t" << fx.norm () << endl;
