@@ -18,6 +18,7 @@ using namespace std;
 #define esXd SelfAdjointEigenSolver<MatrixXd>
 #define index4(i,j,k,l,K) i*K*K*K+j*K*K+k*K+l
 #define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
+#define SWAP(a,b,c) (a)=(b);(b)=(c);(c)=(a);
 
 IOFormat HeavyFmt(12, 0, "\t", ";\n");
 IOFormat Short(8, 0, ", ", "\n", "[", "]");
@@ -28,6 +29,7 @@ typedef vector<int> vi;
 typedef vector<vector<int> > vvi;
 typedef vector<vector<int *> > vvis;
 typedef vector<int *> vis;
+typedef vector<long int*> vlis;
 
 int *ioff;		// lookup table for compound indices
 

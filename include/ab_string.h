@@ -19,6 +19,7 @@ class AB_STRING
 	  int Ne;			// # of alpha/beta occupied states
 	  int itot;			// total # of interacting strings
 	  void _init_ (int, int);
+      int _check_connect_ (long int);
 };
 
 void AB_STRING::_init_ (int Nbs, int Nel)
@@ -37,6 +38,32 @@ void AB_STRING::_init_ (int Nbs, int Nel)
 	// initialize alpha/beta strings, don't forget sign
 	int i;
 	for (i = 0; i < Ne; i++)	str[i] = i;
+}
+
+int AB_STRING::_check_connect_ (const long int I)
+{
+    int low = 0, high = itot - 1, ind = -1;
+
+    // cheat: check two ends
+    if (istr[low] == I)  return low;
+    else if (istr[high] == I)    return high;
+
+    bool flag;
+    do
+    {   // largest integer less than (low + high) / 2.
+        ind = (low + high) / 2;
+        if (istr[ind] == I) break;
+        else if (I > istr[ind]) low = ind;
+        else    high = ind;
+
+        if (abs (low - high) <= 1)
+        {
+            ind = -1;   break;
+        }
+    }
+    while (true);
+
+    return ind;
 }
 
 #endif

@@ -19,12 +19,17 @@ using namespace std;
 class DFCI
 {
 	private:
+		// for dfci
 		int _str_match_ (short *, short *, short *);
 		void _str_gen_ (AB_STRING *, int, int, long int *);
 		void _dfci_initguess_ (MatrixXd&);
 		VectorXd _diagH_ ();
 		VectorXd _Hx_ (MatrixXd&, int);
 		void _GS_ (VectorXd&, const MatrixXd&);
+		// for troy fci
+		VectorXi _get_istr_ (const VectorXd&, int);
+		void _convert_istr_ (const VectorXi&, vlis&, int);
+		MatrixXd _get_H0_ (const vlis&, int);
 	public:
 		string mode;
 		int K;			// basis set size
@@ -41,7 +46,7 @@ class DFCI
 						// see the FCI ref above
 		void _init_ (const MatrixXd&, double *, int, int);
 		void _dfci_ ();
-//		void _troyfci_ ();	// modified from Troy's code
+		void _troyfci_ ();	// modified from Troy's code
 		void _1PDM_ ();
 		void _2PDM_ ();
 };
@@ -438,16 +443,227 @@ void DFCI::_dfci_ ()
 	iter ++;
 }
 
-/*void DFCI::_troyfci_ ()
+VectorXi DFCI::_get_istr_ (const VectorXd& Hd, int N0)
+/* get str for Olson's precond */
 {
-	int N0;
-	if (tot < 10)	N0 = 3;
-	if (tot < 20)	N0 = 5;
-	else if (tot < 100)	N0 = 10;
-	else if (tot < 1000)	N0 = 10 + (int) tot / 25.;
-	else	N0 = 50;
+	long int TOT = tot * tot;
+	VectorXi istr0;	istr0.setZero (N0);
+    VectorXi istr1; istr1.setZero (TOT - N0);
+    double maxval;
+	int maxind = 0, i, temp;
+	bool flag;
+	// first assume the first N0 elements are lowest
+    for (int i = 0; i < N0; i++)	istr0(i) = i;
+    for (int i = N0; i < TOT; i++)	istr1(i - N0) = i;
+
+	do
+	{
+        flag = false;
+        maxval = -500.;
+		// find maxval in the first N0 elements
+		for (int i = 0; i < N0; i++)
+			if (Hd(istr0(i)) > maxval)
+			{
+				maxval = Hd(istr0(i));	maxind = i;
+			}
+		// if some element is less than maxval, break
+		for (i = N0; i < TOT; i++)
+		{
+			if (Hd(istr1(i - N0)) < maxval)
+			{
+                SWAP(temp,istr0(maxind),istr1(i - N0));
+				flag = true;
+			}
+			if (flag)	break;
+		}
+	}
+	while (flag);
+
+	return istr0;
+}
+
+void DFCI::_convert_istr_ (const VectorXi& istr0tmp, vlis& istr0, int N0)
+{
+	int rem;
+	long int Ia, Ib;
+	for (int i = 0; i < N0; i++)
+	{
+		Ia = istr0tmp(i) / tot;
+		Ib = istr0tmp(i) % tot;
+		long int *tmp = new long int [3];
+		tmp[0] = Ia;	tmp[1] = Ib;	tmp[2] = istr0tmp(i);
+		istr0.push_back (tmp);
+	}
+}
+
+MatrixXd DFCI::_get_H0_ (const vlis& istr0, int N0)
+{
+	MatrixXd H0;	H0.setZero (N0, N0);
+	int i, j, k, ij, kl, ijkl, sgnij, sgnkl, cnnct, cnnct2;
+	long int Ia, Ib, Ja, Jb, Ka, Kb;
+	AB_STRING cstra, cstrb, cstr2a, cstr2b;
+
+// 1P contribution
+	for (j = 0; j < N0; j++)
+	{
+		Ja = istr0[j][0];	Jb = istr0[j][1];
+		cstra = astr[Ja];	cstrb = astr[Jb];
+		for (i = 0; i < N0; i++)
+		{
+			Ib = istr0[i][1];	Ia = istr0[i][0];
+/*** alpha contribution ***/
+// if Ib != Jb, alpha contribution is zero
+			if (Ib == Jb)
+			{
+// check whether Ia is connected to Ja;
+				cnnct = cstra._check_connect_ (Ia);
+				if (cnnct > 0)
+				{
+					ij = cstra.cmpind[cnnct];
+					sgnij = cstra.sgn[cnnct];
+					H0(i, j) += h[ij] * sgnij;
+				}
+			}
+/*** beta contribution ***/
+// if Ia != Ja, beta contribution is zero
+			if (Ia == Ja)
+			{
+// check whether Ib is connected to Jb;
+				cnnct = cstrb._check_connect_ (Ib);
+				if (cnnct > 0)
+				{
+					ij = cstrb.cmpind[cnnct];
+					sgnij = cstrb.sgn[cnnct];
+					H0(i, j) += h[ij] * sgnij;
+				}
+			}
+		}
+	}
+
+// 2P same spin
+	for (j = 0; j < N0; j++)
+	{
+		Ja = istr0[j][0];	Jb = istr0[j][1];
+		cstra = astr[Ja];	cstrb = astr[Jb];
+		for (k = 0; k < N0; k++)
+		{
+			Ka = istr0[k][0];	Kb = istr0[k][1];
+/*** alpha contribution ***/
+// if Kb != Jb, alpha contribution is zero
+			if (Kb == Jb)
+			{
+// check whether Ka is connected to Ja;
+				cnnct = cstra._check_connect_ (Ka);
+				if (cnnct > 0)
+				{
+					kl = cstra.cmpind[cnnct];
+					sgnkl = cstra.sgn[cnnct];
+					cstr2a = astr[Ka];
+					for (i = 0; i < N0; i++)
+					{
+						Ia = istr0[i][0];	Ib = istr0[i][1];
+// if Ib != Kb, alpha contribution is zero
+						if (Ib == Kb)
+						{
+// check whether Ia is connected to Ka;
+							cnnct = cstr2a._check_connect_ (Ia);
+							if (cnnct > 0)
+							{
+								ij = cstr2a.cmpind[cnnct];
+								sgnij = cstr2a.sgn[cnnct];
+								ijkl = cpind(ij,kl);
+								H0(i, j) += V[ijkl] * sgnij * sgnkl / 2.;
+							}
+						}
+					}
+				}
+			}
+/*** beta contribution ***/
+// if Ka != Ja, beta contribution is zero
+			if (Ka == Ja)
+			{
+// check whether Kb is connected to Jb;
+				cnnct = cstrb._check_connect_ (Kb);
+				if (cnnct > 0)
+				{
+					kl = cstrb.cmpind[cnnct];
+					sgnkl = cstrb.sgn[cnnct];
+					cstr2b = astr[Kb];
+					for (i = 0; i < N0; i++)
+					{
+						Ia = istr0[i][0];	Ib = istr0[i][1];
+// if Ia != Ka, beta contribution is zero
+						if (Ia == Ka)
+						{
+// check whether Ib is connected to Kb;
+							cnnct = cstr2b._check_connect_ (Ib);
+							if (cnnct > 0)
+							{
+								ij = cstr2b.cmpind[cnnct];
+								sgnij = cstr2b.sgn[cnnct];
+								ijkl = cpind(ij,kl);
+								H0(i, j) += V[ijkl] * sgnij * sgnkl / 2.;
+							}
+						}
+					}
+				}
+			}
+
+		}
+	}
+
+// 2P opposite spin
+	MatrixXd Ha;	Ha.setZero (N0, N0);
+	for (j = 0; j < N0; j++)
+	{
+		Ja = istr0[j][0];	Jb = istr0[j][1];
+		cstra = astr[Ja];	cstrb = astr[Jb];
+		for (i = 0; i < N0; i++)
+		{
+			Ia = istr0[i][0];	Ib = istr0[i][1];
+			cnnct = cstra._check_connect_ (Ia);
+			if (cnnct < 0)	continue;
+			cnnct2 = cstrb._check_connect_ (Ib);
+			if (cnnct2 < 0)	continue;
+			kl = cstra.cmpind[cnnct];
+			sgnkl = cstra.sgn[cnnct];
+			ij = cstrb.cmpind[cnnct2];
+			sgnij = cstrb.sgn[cnnct2];
+			ijkl = cpind(ij,kl);
+			H0(i, j) += V[ijkl] * sgnij * sgnkl;
+			Ha(i, j) = V[ijkl] * sgnij * sgnkl;
+		}
+	}
+
+	cout << "Ha:\n" << Ha << "\n\nHb:\n" << Hb << endl << endl;
+
+	return H0;
+}
+
+void DFCI::_troyfci_ ()
+{
+	cout << "tot config's: " << tot << endl;
+	const int N0 = 10;	// dim of precond
 	VectorXd Hd = _diagH_ ();
-}*/
+	cout << "hd succeed (length: " << Hd.rows () << ")\n";
+	//cout << Hd << endl << endl;
+	// get precond strings in (Ia * tot + Ib) form
+	VectorXi istr0tmp = _get_istr_ (Hd, N0);
+	cout << "istr0tmp succeed\n" << istr0tmp.transpose () << "\n";
+	// convert precond strings in (Ia, Ib, Ia * tot + Ib) form
+	vlis istr0;	_convert_istr_ (istr0tmp, istr0, N0);
+	cout << "istr0 succeed\n";
+	for (int i = 0; i < N0; i++)
+		printf ("%d: [%d, %d, %d]\t%10.7f  %10.7f\n", i,
+			istr0[i][0], istr0[i][1], istr0[i][2],
+			Hd(istr0[i][2]), Hd(istr0[i][1] * tot + istr0[i][0]));
+	// get H0
+	MatrixXd H0 = _get_H0_ (istr0, N0);
+	cout << "H0:\n" << H0 << endl << endl;
+	cout << "CHECK diagonal:\n";
+	for (int i = 0; i < N0; i++)
+		cout << Hd(istr0[i][2]) << endl;
+}
 
 // post-process
 void DFCI::_1PDM_ ()

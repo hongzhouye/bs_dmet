@@ -41,7 +41,8 @@ void DMET::_dmet_init_ (char *fname)
     // Bootstrap
     bs._init_ (hub);
     bs._bs_opt_ ();
-
+    bs.frag.dfci._troyfci_ ();
+    
     // DMET energy;
     _dmet_energy_ (bs.frag.h, bs.frag.V, bs.frag.dfci.P,
         bs.frag.dfci.G, bs.frag.dfci.N);
