@@ -68,6 +68,7 @@ void FRAG::_init_ (const HUBBARD& hub)
     hr._xform_ (hub, sm, h, V);
 
     // solver
+    dfci._init_ (2 * Nimp, Nimp);
     dfci.mode = "major";
 
     // tot # of constraints
@@ -80,8 +81,8 @@ void FRAG::_init_ (const HUBBARD& hub)
 void FRAG::_solver_ (bool _2PDM_flag_)
 {
     for (int i = 0; i < lenV; i++)  Vtot[i] = V[i] + Vpot[i];
-    dfci._init_ (h + hpot, Vtot, 2 * Nimp, Nimp);
-    dfci._dfci_ ();
+    dfci._dfci_ (h + hpot, Vtot);
+    //dfci._troyfci_ (h + hpot, Vtot);
     dfci._1PDM_ ();
     if (_2PDM_flag_)    dfci._2PDM_ ();
 }

@@ -16,6 +16,9 @@ int main (int argc, char * argv[])
 	else if (argc == 2)	dmet._dmet_init_ (argv[1]);
 	else	{cout << "Too many input files!\n";	exit (1);}
 
+	// bootstrap
+	dmet._bs_dmet_ ();
+
 	// check
 	//dmet._dmet_check_ ();
 

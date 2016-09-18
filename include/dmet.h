@@ -20,6 +20,7 @@ class DMET
         HUBBARD hub;
         BOOTSTRAP bs;
         void _dmet_init_ (char *);
+        void _bs_dmet_ ();
         void _dmet_check_ ();
         double _dmet_energy_ (MatrixXd&, double *, MatrixXd&, int);
         double _dmet_energy_ (MatrixXd&, double *, MatrixXd&, double *, int);
@@ -38,11 +39,15 @@ void DMET::_dmet_init_ (char *fname)
 	hub._hubbard_rhf_ ();
     //hub._print_ ();
 
-    // Bootstrap
+    // Bootstrap init
     bs._init_ (hub);
+}
+
+void DMET::_bs_dmet_ ()
+{
+    // bootstrap
     bs._bs_opt_ ();
-    bs.frag.dfci._troyfci_ ();
-    
+
     // DMET energy;
     _dmet_energy_ (bs.frag.h, bs.frag.V, bs.frag.dfci.P,
         bs.frag.dfci.G, bs.frag.dfci.N);
@@ -225,11 +230,11 @@ void DMET::_dmet_check_ ()
     cout << "=======================" << endl;
     cout << "|      FCI-in-HF      |" << endl;
     cout << "=======================" << endl;
-    DFCI dfci;
-    dfci._init_ (bs.frag.h, bs.frag.V, 2 * bs.frag.Nimp, bs.frag.Nimp);
+    DFCI dfci;  dfci.mode = "major";
+    dfci._init_ (2 * bs.frag.Nimp, bs.frag.Nimp);
     cout << "FCI initialization succeeds!\n" << dfci.tot <<
 		" alpha strings are generated!\n\n";
-	dfci._dfci_ ();
+	dfci._dfci_ (bs.frag.h, bs.frag.V);
 	dfci._1PDM_ ();
 	cout << "scf 1PDM:\n" << scf.P << "\n\n";
 	cout << "dfci 1PDM:\n" << dfci.P << "\n\n";
@@ -244,6 +249,18 @@ void DMET::_dmet_check_ ()
 	//cout << "check idempotency:\n" << hred_scf.P * hred_scf.P << "\n\n";
 	dfci._2PDM_ ();
 	printf ("FCI-in-HF embedding energy: %18.16f\n\n",
+			_dmet_energy_ (bs.frag.h, bs.frag.V, dfci.P, dfci.G, dfci.N));
+
+    cout << "=======================" << endl;
+    cout << "|      Troy's FCI     |" << endl;
+    cout << "=======================" << endl;
+    dfci.mode = "major";
+    dfci._init_ (2 * bs.frag.Nimp, bs.frag.Nimp);
+    dfci._troyfci_ (bs.frag.h, bs.frag.V);
+	dfci._1PDM_ ();
+    cout << "dfci 1PDM:\n" << dfci.P << "\n\n";
+    dfci._2PDM_ ();
+    printf ("TROYFCI-in-HF embedding energy: %18.16f\n\n",
 			_dmet_energy_ (bs.frag.h, bs.frag.V, dfci.P, dfci.G, dfci.N));
 }
 
