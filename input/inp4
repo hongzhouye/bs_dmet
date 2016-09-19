@@ -1,0 +1,29 @@
+&hubbard
+
+K = 240 
+N = 120
+BC = a
+U = 8
+
+&end hubbard
+
+&fragment
+Nimp = 4
+0 0
+1 1
+2 2
+3 3
+
+Center = 1;2
+
+Npop = 2
+0;3
+1;2
+
+N1e = 1
+0:1;2:3 1:2
+
+N2e = 1
+0;3 1
+
+&end fragment
