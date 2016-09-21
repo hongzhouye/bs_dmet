@@ -75,7 +75,7 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
             &scale, u, dx, frag);
 
         if (scale < 0)  cout << "Warning: stepped backwards.\n\n";
-        frag.dfci.mode = "major";
+        //frag.dfci.mode = "major";
 
         if (dx.norm () < DX_TOL || fx.norm () < FX_TOL) converge = true;
 

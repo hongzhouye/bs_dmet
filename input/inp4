@@ -1,8 +1,8 @@
 &hubbard
 
-K = 240 
-N = 120
-BC = a
+K = 20 
+N = 7
+BC = p
 U = 8
 
 &end hubbard

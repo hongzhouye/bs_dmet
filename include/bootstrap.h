@@ -21,10 +21,6 @@ void BOOTSTRAP::_init_ (const HUBBARD& hub)
 {
     frag._init_ (hub);
     Ni = frag.Nimp * 2;
-
-    frag.hpot.setZero (Ni, Ni);
-    int lenh = Ni * (Ni + 1) / 2, lenV = lenh * (lenh + 1) / 2;
-    frag.Vpot = _darray_gen_ (lenV);
 }
 
 void BOOTSTRAP::_bs_opt_ ()
@@ -41,8 +37,6 @@ VectorXd _dmet_iter_ (VectorXd& u, FRAG& frag)
     VectorXd _calc_obj_ (const FRAG&);
 
     _make_pot_ (u, frag);
-    /*cout << "u = " << u.transpose ().format (Short) << "\n";
-    cout << "hpot:\n" << frag.hpot.format (Short) << "\n\n";*/
     frag._solver_ (true);
     return _calc_obj_ (frag);
 }
