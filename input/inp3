@@ -1,9 +1,9 @@
 &hubbard
 
-K = 20 
-N = 7
-BC = p
-U = 8
+K = 8 
+N = 4
+BC = a
+U = 4
 
 &end hubbard
 

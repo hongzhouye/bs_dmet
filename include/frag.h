@@ -4,6 +4,7 @@
 #include "hubbard.h"
 #include "schmidt.h"
 #include "hred.h"
+#include "fciwrap.h"
 #include "hf.h"
 
 class FRAG
@@ -37,7 +38,8 @@ class FRAG
 
         SCHMIDT sm;
         HRED hr;
-        DFCI dfci;
+        //DFCI dfci;
+        FCIWRAP dfci;
 
         void _init_ (const HUBBARD&);
         void _solver_ (bool);
@@ -68,8 +70,10 @@ void FRAG::_init_ (const HUBBARD& hub)
     hr._xform_ (hub, sm, h, V);
 
     // solver
-    dfci._init_ (2 * Nimp, Nimp);
-    dfci.mode = "major";
+    //dfci._init_ (2 * Nimp, Nimp);
+    //dfci.mode = "major";
+    dfci._init_ (2 * Nimp, Nimp, 12);
+    dfci.guess_read = false;
 
     // tot # of constraints
     Nopt = Npop + N1e + N2e;
@@ -81,9 +85,9 @@ void FRAG::_init_ (const HUBBARD& hub)
 void FRAG::_solver_ (bool _2PDM_flag_)
 {
     for (int i = 0; i < lenV; i++)  Vtot[i] = V[i] + Vpot[i];
-    dfci._dfci_ (h + hpot, Vtot);
-    //dfci._troyfci_ (h + hpot, Vtot);
-    dfci._1PDM_ ();
-    if (_2PDM_flag_)    dfci._2PDM_ ();
+    //dfci._dfci_ (h + hpot, Vtot);
+    dfci._solve_ (h + hpot, Vtot);
+    //dfci._1PDM_ ();
+    //if (_2PDM_flag_)    dfci._2PDM_ ();
 }
 #endif

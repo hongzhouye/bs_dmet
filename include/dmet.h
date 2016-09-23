@@ -22,6 +22,7 @@ class DMET
         void _dmet_init_ (char *);
         void _bs_dmet_ ();
         void _dmet_check_ ();
+        void _fci_check_ ();
         double _dmet_energy_ (MatrixXd&, double *, MatrixXd&, int);
         double _dmet_energy_ (MatrixXd&, double *, MatrixXd&, double *, int);
 };
@@ -32,8 +33,10 @@ void DMET::_dmet_init_ (char *fname)
     _read_ (fname, hub, bs.frag);
 
     // set up ioff -- the lookup table
-	int K = bs.frag.Nimp * 2;
-	_gen_ioff_ (hub.K * (hub.K + 1) / 2);
+	//int K = bs.frag.Nimp * 2;
+    int lenh = hub.K * (hub.K + 1) / 2;
+    _gen_ioff_ (lenh * (lenh + 1) / 2);
+    //_gen_ioff_ (hub.K * (hub.K + 1) / 2);
 
     // Hubbard Hartree-Fock calculation
 	hub._hubbard_rhf_ ();
@@ -95,6 +98,25 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
     return E;
 }
 
+void DMET::_fci_check_ ()
+{
+    DFCI dfci;
+    dfci._init_ (hub.K, hub.N);
+    dfci.mode = "major";
+    cout << "init dfci done!\n";
+    int lenh = hub.K * (hub.K + 1) / 2, lenV = lenh * (lenh + 1) / 2;
+    double *V = _darray_gen_ (lenV);
+    cout << "init V done!\n";
+    for (int i = 0; i < hub.K; i++)
+    {
+        int ii = cpind(i,i);    int iiii = cpind(ii,ii);
+        cout << "i = " << i << endl;
+        V[iiii] = hub.U;
+    }
+    cout << "set V done!\n";
+    dfci._dfci_ (hub.h, V);
+}
+
 // for correlated case where 2PDM Gamma is needed too
 double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int N)
 {
@@ -133,7 +155,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
             E1 += h(mu, nu) * P(nu, mu);
-    E1 /= (N / 2.);
+    E1 /= 2.;
 
     // new storage style
     for (mu = 0; mu < N; mu++)
@@ -147,7 +169,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
                     E2 += G[cpind(mn,ls)] * V[cpind(mn,ls)];
                 }
         }
-    E2 /= N;
+    //E2 /= N;
 
     cout << "========================\n";
     cout << "|      DMET ENERGY     |\n";

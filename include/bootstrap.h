@@ -38,6 +38,7 @@ VectorXd _dmet_iter_ (VectorXd& u, FRAG& frag)
 
     _make_pot_ (u, frag);
     frag._solver_ (true);
+    //printf ("solve succed!\n");
     return _calc_obj_ (frag);
 }
 

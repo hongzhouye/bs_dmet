@@ -58,7 +58,8 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         iter++;
         fx = (*func) (u, frag);
         // switch FCI guess mode to read
-        frag.dfci.mode = "read";
+        //frag.dfci.mode = "read";
+        frag.dfci.guess_read = true;
         J = _fd_Jac_ (func, u, frag);
 
         dx = J.colPivHouseholderQr (). solve (-fx);
@@ -75,7 +76,7 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
             &scale, u, dx, frag);
 
         if (scale < 0)  cout << "Warning: stepped backwards.\n\n";
-        //frag.dfci.mode = "major";
+        //frag.dfci.guess_read = false;
 
         if (dx.norm () < DX_TOL || fx.norm () < FX_TOL) converge = true;
 

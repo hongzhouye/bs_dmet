@@ -7,11 +7,13 @@
 #include "hf.h"
 #include "ab_string.h"
 
+#include <ctime>
+
 using namespace Eigen;
 using namespace std;
 
 #define MAX_DVDS_ITER 100
-#define DVDS_CONV 1e-8
+#define DVDS_CONV 1e-10
 #define TROY_CONV 1e-13
 
 // FCI ref: J. Olsen and B. O. Roos, J. Chem. Phys. 89 (4), 1988
@@ -116,10 +118,12 @@ void DFCI::_init_ (int Nbs, int Ne)
 	lenV = lenh * (lenh + 1) / 2;
 	h = _darray_gen_ (lenh);
 	V = _darray_gen_ (lenV);
-	//ifzero = new bool [lenV];
+	cout << "init dfci h and V!\n";
+	ifzero = new bool [lenV];
 
 	// malloc memory for 'astr'
 	tot = _nchoosek_ (K, N);
+	cout << "tot = " << tot << endl;
 	astr = new AB_STRING [tot];
 	if (astr == NULL)
 	{
@@ -200,7 +204,11 @@ void DFCI::_set_h_V_ (const MatrixXd& hinp, double *Vinp)
 // convert input h and V
 {
 	int i, j, k, ij, ik, kj;
-	for (i = 0; i < lenV; i++)	V[i] = Vinp[i];
+	for (i = 0; i < lenV; i++)
+	{
+		V[i] = Vinp[i];
+		ifzero[i] = (V[i] > 1.E-12) ? (true) : (false);
+	}
 	for (i = 0; i < K; i++)
 		for (j = 0; j <= i; j++)
 		{
@@ -210,7 +218,8 @@ void DFCI::_set_h_V_ (const MatrixXd& hinp, double *Vinp)
 			{
 				ik = cpind(i,k);
 				kj = cpind(k,j);
-				h[ij] -= V[cpind(ik,kj)] / 2.;
+				if (ifzero[cpind(ik,kj)])
+					h[ij] -= V[cpind(ik,kj)] / 2.;
 			}
 		}
 }
@@ -248,12 +257,14 @@ VectorXd DFCI::_diagH_ ()
 			{
 				pos = cstr.itot - k - 1;
 				kk = cstr.cmpind[pos];
+				if (ifzero[cpind(ii,kk)])
 				F(Ib) += V[cpind(ii,kk)] / 2.;
 			}
 		}
 		for (i = 0; i < cstr.itot - N; i++)
 		{
 			ij = cstr.cmpind[i];
+			if (ifzero[cpind(ij,ij)])
 			F(Ib) += V[cpind(ij,ij)] / 2.;
 		}
 	}
@@ -280,6 +291,7 @@ VectorXd DFCI::_diagH_ ()
 				{
 					pos = cstr2.itot - k - 1;
 					kk = cstr2.cmpind[pos];
+					if (ifzero[cpind(ii,kk)])
 					dgH(Ia, Ib) += V[cpind(ii,kk)];
 				}
 			}
@@ -326,6 +338,7 @@ VectorXd DFCI::_Hx_ (const MatrixBase<Derived>& b, int col)
 			for (Jb = 0; Jb < cstr2.itot; Jb++)
 			{
 				ij = cstr2.cmpind[Jb];
+				if (ifzero[cpind(ij,kl)])
 				F(cstr2.istr[Jb]) += cstr.sgn[Kb] * cstr2.sgn[Jb] * V[cpind(ij,kl)] / 2.;
 			}
 		}
@@ -351,6 +364,7 @@ VectorXd DFCI::_Hx_ (const MatrixBase<Derived>& b, int col)
 				for (Jb = 0; Jb < cstr2.itot; Jb++)
 				{
 					kl = cstr2.cmpind[Jb];
+					if (ifzero[cpind(ij,kl)])
 					G(cstr.istr[Ja], cstr2.istr[Jb]) += cstr.sgn[Ja] * cstr2.sgn[Jb] * V[cpind(ij,kl)];
 				}
 			}
@@ -400,28 +414,35 @@ void DFCI::_dfci_ (const MatrixXd& hinp, double *Vinp)
 	int iter = 1, i;
 	VectorXd q (tot * tot), precond (tot * tot);
 	double error, temp, offset, beta = 1.;
-	//cout << "iter\terror" << endl;
+
+	// for timing issue
+	clock_t s1, s2, e1, e2, dt = 0;
+
+	cout << "iter\terror" << endl;
+	s2 = clock ();
 	while (iter < MAX_DVDS_ITER)
 	{
 		C_fci = b * alpha;
 		q = s * alpha - lambda * C_fci;
 		error = q.norm ();
 		if (error < DVDS_CONV)	break;
-		else	//cout << iter << "\t" << error << "\n";
+		else	cout << iter << "\t" << error << "\n";
 
 		// offset preconditioner to avoid singularity
-		if (iter < 3)	offset = 1e-14;	else	offset = 0.;
+		if (iter < 3)	offset = 1e-10;	else	offset = 0.;
 		// Davidson preconditioner
-		//precond = VectorXd::Constant (tot * tot, lambda + offset) - diagH;
+		precond = VectorXd::Constant (tot * tot, lambda + offset) - diagH;
 		// Bendazzoli preconditioner
-		precond = VectorXd::Constant (tot * tot, lambda) - diagH
-			+ C_fci.cwiseProduct (2. * q - beta * C_fci);
+		//precond = VectorXd::Constant (tot * tot, lambda) - diagH
+		//	+ C_fci.cwiseProduct (2. * q - beta * C_fci);
 		q = q.cwiseQuotient (precond);
 
 		// Schmidt orthonormalization
 		_GS_ (q, b);
 		b.conservativeResize (tot * tot, iter + 1);	b.col(iter) = q;
+		s1 = clock ();
 		s.conservativeResize (tot * tot, iter + 1);	s.col(iter) = _Hx_ (b, iter);
+		e1 = clock ();	dt += e1 - s1;
 
 		// form tilde{A}
 		At.conservativeResize (iter + 1, iter + 1);
@@ -444,12 +465,18 @@ void DFCI::_dfci_ (const MatrixXd& hinp, double *Vinp)
 			<< error << "\n\n";
 		return;
 	}
+	e2 = clock ();
 	//CHECK
 	//cout << "guess mode = " << mode << "\titer = " << iter << endl << endl;
-	//cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
+	cout << "\nDesired accuracy is reached after " << iter << " iterations!\n\n";
 	MatrixXd v = b * alpha;	C_fci = v;
-	//cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
-	//printf ("FCI energy is %18.16f\n\n", lambda);	// no need to print out this value
+	MatrixXd Hv = _Hx_ (v, 0);
+	double denom = Hv.col (0).transpose () * v.col (0);
+	cout << "Estimated error ||H v - lambda * v|| is " << (_Hx_ (v, 0) - lambda * v).norm () << "\n\n";
+	cout << "Relative error in Troy's fashion is " << Hv.squaredNorm () / denom / denom - 1 << endl << endl;
+	printf ("FCI energy is %18.16f\n\n", lambda);	// no need to print out this value
+	cout << "Hx time: " << dt / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+	cout << "Tot time: " << (e2 - s2) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 	iter ++;
 }
@@ -578,6 +605,7 @@ MatrixXd DFCI::_get_H0_ (const VectorXd& Hd, const vlis& istr0, int N0)
 								ij = cstra.cmpind[P];
 								kl = cstr2a.cmpind[cnnct2];
 								sgnkl = cstr2a.sgn[cnnct2];
+								if (ifzero[cpind(ij,kl)])
 								H0(i, j) += V[cpind(ij,kl)] * sgnkl / 2.;
 							}
 						}
@@ -591,6 +619,7 @@ MatrixXd DFCI::_get_H0_ (const VectorXd& Hd, const vlis& istr0, int N0)
 								sgnij = cstra.sgn[cnnct];
 								int P = cstr2a.itot - p - 1;
 								kl = cstr2a.cmpind[P];
+								if (ifzero[cpind(ij,kl)])
 								H0(i, j) += V[cpind(ij,kl)] * sgnij / 2.;
 							}
 						}
@@ -604,6 +633,7 @@ MatrixXd DFCI::_get_H0_ (const VectorXd& Hd, const vlis& istr0, int N0)
 							sgnij = cstra.sgn[cnnct];
 							kl = cstr2a.cmpind[cnnct2];
 							sgnkl = cstr2a.sgn[cnnct2];
+							if (ifzero[cpind(ij,kl)])
 							H0(i, j) += V[cpind(ij,kl)] * sgnij * sgnkl / 2.;
 						}
 				}
@@ -620,6 +650,7 @@ MatrixXd DFCI::_get_H0_ (const VectorXd& Hd, const vlis& istr0, int N0)
 						sgnij = cstrb.sgn[cnnct];
 						kl = cstr2b.cmpind[cnnct2];
 						sgnkl = cstr2b.sgn[cnnct2];
+						if (ifzero[cpind(ij,kl)])
 						H0(i, j) += V[cpind(ij,kl)] * sgnij * sgnkl / 2.;
 					}
 				}
@@ -645,6 +676,7 @@ MatrixXd DFCI::_get_H0_ (const VectorXd& Hd, const vlis& istr0, int N0)
 				ij = cstrb.cmpind[cnnct2];
 				sgnij = cstrb.sgn[cnnct2];
 				ijkl = cpind(ij,kl);
+				if (ifzero[ijkl])
 				H0(i, j) += V[ijkl] * sgnij * sgnkl;
 			}
 	}

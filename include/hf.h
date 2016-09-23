@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+//#include "easylogging++.h"
 
 using namespace Eigen;
 using namespace std;
@@ -30,6 +31,7 @@ typedef vector<vector<int> > vvi;
 typedef vector<vector<int *> > vvis;
 typedef vector<int *> vis;
 typedef vector<long int*> vlis;
+typedef vector<MatrixXd> vMatrixXd;
 
 int *ioff;		// lookup table for compound indices
 
@@ -55,6 +57,16 @@ void _eigh_ (const MatrixXd& A, MatrixXd& U, VectorXd& D)
 	D = es.eigenvalues ();
 	U = es.eigenvectors ();
 }
+
+// eigen solver for 2-by-2 Hermitian matrix
+void _eigh2_ (const Matrix2d& A, Matrix2d& U, Vector2d& D)
+{
+	SelfAdjointEigenSolver<Matrix2d> es;
+	es.compute (A);
+	D = es.eigenvalues ();
+	U = es.eigenvectors ();
+}
+
 
 // revert the order of eigen-vectors/values
 // since Eigen by default gives them in an ascending order
@@ -101,12 +113,86 @@ int *_iarray_gen_ (int size)
 	return p;
 }
 
+// generate int type array, with input value
+int *_iarray_gen_ (int size, int init)
+{
+	int i;
+	int * p = new int[size];
+	if (p == NULL)
+	{
+		cout << "Allocate memory error!\n";
+		exit (1);
+	}
+	for (i = 0; i < size; i++)	p[i] = init;
+	return p;
+}
+
+// generate a 2D int type array
+int **_iarray2_gen_ (int N1, int N2)
+{
+	int i, j;
+	int **p = new int* [N1];
+	for (i = 0; i < N1; i++)
+	{
+		p[i] = new int [N2];
+		for (j = 0; j < N2; j++)	p[i][j] = 0;
+	}
+	return p;
+}
+
+// generate a 3D int type array
+int ***_iarray3_gen_ (int N1, int N2, int N3)
+{
+	int i, j, k;
+	int ***p = new int** [N1];
+	for (i = 0; i < N1; i++)
+	{
+		p[i] = new int* [N2];
+		for (j = 0; j < N2; j++)
+		{
+			p[i][j] = new int [N3];
+			for (k = 0; k < N3; k++)	p[i][j][k] = 0;
+		}
+	}
+	return p;
+}
+
+// copy array 1 to array 2 (size N given)
+template <typename T>
+void _copy_array_ (T *a1, T *a2, int N)
+{
+	for (int i = 0; i < N; i++)	a2[i] = a1[i];
+}
+
+// copy array 1 to array 2 (3D)
+template <typename T>
+void _copy_array3_ (T ***a1, T ***a2, int N1, int N2, int N3)
+{
+	int i,j,k;
+	for (i = 0; i < N1; i++)
+        for (j = 0; j < N2; j++)
+            for (k = 0; k < N3; k++)
+    			a2[i][j][k] = a1[i][j][k];
+}
+
+// take absolute values of a 3D array
+template <typename T>
+void _abs_array3_ (T ***a, int N1, int N2, int N3)
+{
+    int i,j,k;
+    for (i = 0; i < N1; i++)
+        for (j = 0; j < N2; j++)
+            for (k = 0; k < N3; k++)
+                if (a[i][j][k] < T(0))  a[i][j][k] = -a[i][j][k];
+}
+
 // n choose k function
 long int _nchoosek_ (int n, int k)
 {
 	int i;
 	double prod = 1.;
 	if (k == 0)	return 1;
+	else if (n < 0 || k < 0)	return 0;
 	for (i = 1; i <= k; i++)
 		prod *= (double) (n - k + i) / i;
 	return (long int) prod;

@@ -22,5 +22,8 @@ int main (int argc, char * argv[])
 	// check
 	//dmet._dmet_check_ ();
 
+	// FCI check
+	//dmet._fci_check_ ();
+
 	return 0;
 }
