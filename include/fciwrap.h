@@ -28,7 +28,7 @@ class FCIWRAP
         void _get_h_ (const MatrixXd&);
     public:
         int N, No, Nstr, N0MAX;
-        double *h, *V, *G, Ei, Sym;
+        double *h, *G, Ei, Sym;
         MatrixXd P;
         vMatrixXd Xi;
         bool guess_read;
@@ -51,7 +51,7 @@ void FCIWRAP::_init_ (int Nbs, int Ne, int N0max)
 
 //  allocate memory for all matrices
     int lenh = N * (N + 1) / 2, lenV = lenh * (lenh + 1) / 2;
-    h = _darray_gen_ (lenh);    V = _darray_gen_ (lenV);
+    h = _darray_gen_ (lenh);
     P.setZero (N, N);           G = _darray_gen_ (lenV);
 }
 
@@ -61,7 +61,11 @@ void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
     _get_h_ (hinp);
 
 //  allocate memory for NS-dependent quantities
-    if (!guess_read)    Xi.push_back (MatrixXd::Zero (Nstr, Nstr));
+    if (!guess_read)
+    {
+        if (Xi.size ()) Xi.clear ();
+        Xi.push_back (MatrixXd::Zero (Nstr, Nstr));
+    }
 
 //  No Time To Explain! Get On The Car!
     _FCIman_ (N, No, N0MAX, 1, h, Vinp, Xi, &Ei, &Sym, P, G);

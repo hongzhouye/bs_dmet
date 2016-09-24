@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <valarray>
 #include <map>
 //#include "easylogging++.h"
 
@@ -32,6 +33,16 @@ typedef vector<vector<int *> > vvis;
 typedef vector<int *> vis;
 typedef vector<long int*> vlis;
 typedef vector<MatrixXd> vMatrixXd;
+
+//typedef valarray<int> vi;
+typedef valarray<double> vd;
+
+typedef vector<int> iv1;
+typedef vector<iv1> iv2;
+typedef vector<iv2> iv3;
+typedef vector<double> dv1;
+typedef vector<dv1> dv2;
+typedef vector<dv2> dv3;
 
 int *ioff;		// lookup table for compound indices
 
