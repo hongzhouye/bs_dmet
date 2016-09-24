@@ -61,7 +61,6 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         //frag.dfci.mode = "read";
         frag.dfci.guess_read = true;
         J = _fd_Jac_ (func, u, frag);
-        cout << "Jacobian:\n" << J << "\n\n";
 
         dx = J.colPivHouseholderQr (). solve (-fx);
         double linsol_err = (J * dx + fx).norm ();

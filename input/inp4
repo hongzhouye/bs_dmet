@@ -3,7 +3,7 @@
 K = 20 
 N = 7
 BC = p
-U = 8
+U = 4
 
 &end hubbard
 

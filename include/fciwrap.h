@@ -3,6 +3,7 @@
 
 #include "troyfci.h"
 #include "hf.h"
+#include <cstdio>
 
 class FCIWRAP
 /*********************************************************************
@@ -39,8 +40,8 @@ class FCIWRAP
 void FCIWRAP::_get_h_ (const MatrixXd& hinp)
 {
     int i, j, ij;
-    for (i = ij = 0; i < N; i++) for (j = 0; j <= i; j++, ij++)
-        h[ij] = hinp(i, j);
+    for (i = 0; i < N; i++) for (j = 0; j <= i; j++)
+        h[cpind(i,j)] = hinp(i, j);
 }
 
 void FCIWRAP::_init_ (int Nbs, int Ne, int N0max)
@@ -60,6 +61,9 @@ void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
 //  get h from input
     _get_h_ (hinp);
 
+    void _write_ (const MatrixXd&, double *);
+    if (Xi.size () == 0)    _write_ (hinp, Vinp);
+
 //  allocate memory for NS-dependent quantities
     if (!guess_read)
     {
@@ -69,6 +73,25 @@ void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
 
 //  No Time To Explain! Get On The Car!
     _FCIman_ (N, No, N0MAX, 1, h, Vinp, Xi, &Ei, &Sym, P, G);
+}
+
+void _write_ (const MatrixXd& h, double *V)
+{
+    int N = h.rows ();
+    int i,j,k,l;
+    FILE *ph = fopen ("h", "w+");
+    FILE *pV = fopen ("V", "w+");
+    for (i = 0; i < N; i++) for (j = 0; j < N; j++)
+    {
+        fprintf (ph, "%d;%d;%18.16f\n", i,j,h(i, j));
+        for (k = 0; k < N; k++) for (l = 0; l < N; l++)
+        {
+            int ik = cpind(i,k);    int jl = cpind(j,l);
+            fprintf (pV, "%d;%d;%d;%d;%18.16f\n", i,j,k,l,V[cpind(ik,jl)]);
+        }
+    }
+    fclose (ph);
+    fclose (pV);
 }
 
 #endif

@@ -253,18 +253,11 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
     bool flag;
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
 
-    /*AEx1 = _iarray3_gen_ (Max1, N, N);
-    AEx2 = _iarray3_gen_ (Max2, N2, N2);
-    _copy_array3_ (Ex1, AEx1, Max1, N, N);
-    _abs_array3_ (AEx1, Max1, N, N);
-    _copy_array3_ (Ex2, AEx2, Max2, N2, N2);
-    _abs_array3_ (AEx2, Max2, N2, N2);*/
     for (i = 0; i < Max1; i++)  for (j = 0; j < N; j++) for (k = 0; k < N; k++)
         AEx1[i][j][k] = abs (Ex1[i][j][k]);
     for (i = 0; i < Max2; i++)  for (j = 0; j < N2; j++) for (k = 0; k < N2; k++)
         AEx2[i][j][k] = abs (Ex2[i][j][k]);
 //  Reverse String Ordering
-    //RIstr = _iarray_gen_ (Nstr);
     for (m = 0; m < N0; m++)    RIstr[Istr[m]] = m;
 
 //  Remove terms that are not in H0
@@ -289,7 +282,6 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
             }
 
 //  Check for Zero blocks in V
-    //ifzero = _iarray2_gen_ (N, N);
     for (i = 0; i < N; i++)
         for (k = 0; k < N; k++)
         {
@@ -368,9 +360,7 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
         else    iiMax = _nchoosek_ (N - 2, No - 1);
 
 //  Gather together phases in Stmp
-        //stmp = _darray_gen_ (N0);
-        //IY = _iarray_gen_ (N0, -1);
-
+        stmp.assign (N0, 0);    IY.assign (N0, -1);
         for (ii = 0; ii < iiMax; ii++)
         {
             I1 = AEx1[ii][i][k];   I2 = AEx1[ii][k][i];
@@ -478,9 +468,6 @@ void _HX_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
 
     Y.setZero (Nstr, Nstr);
-    /*AEx1 = _iarray3_gen_ (Max1, N, N);
-    _copy_array3_ (Ex1, AEx1, Max1, N, N);
-    _abs_array3_ (AEx1, Max1, N, N);*/
     for (i = 0; i < Max1; i++)  for (j = 0; j < N; j++) for (k = 0; k < N; k++)
         AEx1[i][j][k] = abs (Ex1[i][j][k]);
 
@@ -490,7 +477,6 @@ void _HX_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
     Y.setZero ();
 
 //  Check for Zero Blocks in V
-    //ifzero = _iarray2_gen_ (N, N);
     for (i = 0; i < N; i++) for (k = 0; k < N; k++)
     {
         ik = cpind(i,k);    flag = true;
@@ -766,7 +752,7 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
         XH.setZero (Nstr, Nstr);
         _HX_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, X, h, V, XH);
         Energy = _MDOT_ (X, XH);
-        printf ("Guess energy: %18.16f\n", Energy);
+        //printf ("Guess energy: %18.16f\n", Energy);
 
 //  Iteratively determine eigenvalue #iS of the Hamiltonian
         fac = 1.;  iter = 0;
@@ -869,7 +855,7 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
 
 //  End of the Loop for FCI iteration
         }
-        printf ("Done after %4d iterations.\n", iter);
+//        printf ("Done after %4d iterations.\n", iter);
 //  Energy, Uncertainty for THIS State
         _HX_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, X, h, V, XH);
         Energy = _MDOT_(X,XH)/X.squaredNorm ();
@@ -877,32 +863,18 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
         Xi[iS] = X; Ei[iS] = Energy;
 //  End of the BIG Loop over States
     }
-    cout << "=============================\n";
+/*    cout << "=============================\n";
     cout << "|        FCI Summary        |\n";
     cout << "=============================\n";
     printf ("State\tEnergy\t\t\tSpin Sym\tUncertainty\n");
     for (i = 0; i < NS; i++)
         printf ("%2d\t%18.16f\t%7.5f\t\t%18.16e\n", i + 1, Ei[i], Sym[i], Uncertainty[i]);
-
+*/
 //  Get the (Ground Staate) 1PDM and 2PDM
-    //delete Iocc;delete Isubst;delete Istr;
-    //P2 = _darray_gen_ (lenh * (lenh + 1) / 2);
     _RPDM_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, Xi, P, P2);
 
-
-    /*delete P2;
-    for (i = 0; i < Max1; i++)
-    {
-        for (j = 0; j < N; j++) delete [] Ex1[i][j];
-        delete [] Ex1[i];
-    }
-    delete [] Ex1;
-    for (i = 0; i < Max2; i++)
-    {
-        for (j = 0; j < N2; j++) delete [] Ex2[i][j];
-        delete [] Ex2[i];
-    }
-    delete [] Ex2;*/
+    for (i = 0; i < N; i++) delete [] Zindex[i];
+    delete [] Zindex;
 }
 
 #undef THRESH
