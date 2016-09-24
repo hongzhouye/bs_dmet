@@ -16,7 +16,7 @@ using namespace Eigen;
 // A global index matrix
 int **Zindex;
 
-void _Isort_ (int N, vi& X, int *Isign)
+void _Isort_ (int N, iv1& X, int *Isign)
 //  Sorts an Integer arrary X by straight insertion
 //  Isign is the sign of the Permutation needed to bring it in order
 {
@@ -39,10 +39,10 @@ void _Isort_ (int N, vi& X, int *Isign)
 }
 
 void _RecurEx1_ (int N, int No, int i, int a, int Max1,
-    vi& Iocc, iv3& Ex1, int IRecur, int *m, int *Ind)
+    iv1& Iocc, iv3& Ex1, int IRecur, int *m, int *Ind)
 {
     int ii,jj,IsiO,IsaO,aind,iind,Isign,iimin;
-    vi Isubst(No);
+    iv1 Isubst(No);
 
     if (!IRecur)    iimin = 0;
     else    iimin = Iocc[IRecur - 1] + 1;
@@ -60,6 +60,7 @@ void _RecurEx1_ (int N, int No, int i, int a, int Max1,
                 else if (Iocc[jj] == a) IsaO = 1;
             if (IsiO == 1 && IsaO == 0)
             {
+                //_copy_array_ (Iocc, Isubst, No);
                 Isubst = Iocc;
                 for (jj = 0; jj < No; jj++)
                     if (i == Isubst[jj])    Isubst[jj] = a;
@@ -74,17 +75,18 @@ void _RecurEx1_ (int N, int No, int i, int a, int Max1,
             _RecurEx1_ (N, No, i, a, Max1, Iocc, Ex1,
                 IRecur + 1, m, Ind);
     }
+    //delete Isubst;
     return;
 }
 
 void _RecurEx2_ (int N, int No, int N2, int i, int j, int a, int b,
-    int ij, int ab, int Max2, vi& Iocc, iv3& Ex2, int IRecur,
+    int ij, int ab, int Max2, iv1& Iocc, iv3& Ex2, int IRecur,
     int *m, int *Ind)
 {
     int ii,jj;
     bool IsiO,IsjO,IsaO,IsbO;
     int iind,jind,aind,bind,Isign,iimin;
-    vi Isubst(No);
+    iv1 Isubst(No);
 
     if (!IRecur)    iimin = 0;
     else    iimin = Iocc[IRecur - 1] + 1;
@@ -106,6 +108,7 @@ void _RecurEx2_ (int N, int No, int N2, int i, int j, int a, int b,
                 else if (Iocc[jj] == b)  IsbO = true;
             if (IsiO && IsjO && !IsaO && !IsbO)
             {
+                //_copy_array_ (Iocc, Isubst, No);
                 Isubst = Iocc;
                 for (jj = 0; jj < No; jj++)
                     if (Isubst[jj] == i)    Isubst[jj] = a;
@@ -122,12 +125,15 @@ void _RecurEx2_ (int N, int No, int N2, int i, int j, int a, int b,
             _RecurEx2_ (N, No, N2, i, j, a, b, ij, ab,
                 Max2, Iocc, Ex2, IRecur + 1, m, Ind);
     }
+    //delete Isubst;
+    return;
 }
 
-void _IString_ (int N, int No, int N2, int Max1, int Max2, iv3& Ex1, iv3& Ex2)
+void _IString_ (int N, int No, int N2,
+    int Max1, int Max2, iv3& Ex1, iv3& Ex2)
 {
     int i, j, k, a, b, ij, ab, IRecur, m, Ind;
-    vi Iocc(No);
+    iv1 Iocc(No);
 
 //  Find Strings that differ by a Single Excitation
     for (i = 0; i < N; i++)
@@ -152,10 +158,11 @@ void _IString_ (int N, int No, int N2, int Max1, int Max2, iv3& Ex1, iv3& Ex2)
                         Max2, Iocc, Ex2, 0, &m, &Ind);
                 }
         }
+    //delete Iocc;
     return;
 }
 
-int _Index_ (int No, const vi& Iocc)
+int _Index_ (int No, const iv1& Iocc)
 {
     int i, Isign;
     int index = 0;  /* !!!!! INDEX STARTS FROM 1 !!!!! */
@@ -165,7 +172,7 @@ int _Index_ (int No, const vi& Iocc)
 }
 
 void _GetHd_ (int N, int No, int Nstr, double *h, double *V,
-    vi& Iocca, vi& Ioccb, MatrixXd& Hd, int IRecur)
+    iv1& Iocca, iv1& Ioccb, MatrixXd& Hd, int IRecur)
 {
     int i,j,imin,jmin,k,ka,kb,l,la,lb,Isigna,Isignb;
     int kka, kkb, lla, llb, kla, klb;
@@ -213,7 +220,8 @@ void _GetHd_ (int N, int No, int Nstr, double *h, double *V,
     return;
 }
 
-void _GetIstr_ (int N, int No, int Nstr, int N0, MatrixXd& Hd, vi& Istr)
+void _GetIstr_ (int N, int No, int Nstr, int N0,
+    MatrixXd& Hd, iv1& Istr)
 {
     int itmp, a, b, i;
     double min;
@@ -232,24 +240,31 @@ void _GetIstr_ (int N, int No, int Nstr, int N0, MatrixXd& Hd, vi& Istr)
 }
 
 void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
-    int Nstr, const iv3& Ex1, const iv3& Ex2, const vi& Istr,
+    int Nstr, const iv3& Ex1, const iv3& Ex2, const iv1& Istr,
     double *h, double *V, MatrixXd& H0)
 {
-    vi RIstr(Nstr), IY;    IY.assign (N0, -1);
+    iv1 RIstr(Nstr), IY;   IY.assign (N0, -1);
     iv2 ifzero(N, iv1(N));
     iv3 AEx1(Max1, iv2(N, iv1(N))), AEx2(Max2, iv2(N2, iv1(N2)));
     int i,j,k,l,ij,kl,ii,jj,I1,I2,iiMax,J1,J2,jjMax,ik,jl,m,If0,mmax;
-    double Vtmp,VS,VSS,htmp,hS; vd stmp(N0);
+    double Vtmp,VS,VSS,htmp,hS;
+    dv1 stmp(N0);
     MatrixXd H0tmp;
     bool flag;
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
 
+    /*AEx1 = _iarray3_gen_ (Max1, N, N);
+    AEx2 = _iarray3_gen_ (Max2, N2, N2);
+    _copy_array3_ (Ex1, AEx1, Max1, N, N);
+    _abs_array3_ (AEx1, Max1, N, N);
+    _copy_array3_ (Ex2, AEx2, Max2, N2, N2);
+    _abs_array3_ (AEx2, Max2, N2, N2);*/
     for (i = 0; i < Max1; i++)  for (j = 0; j < N; j++) for (k = 0; k < N; k++)
         AEx1[i][j][k] = abs (Ex1[i][j][k]);
     for (i = 0; i < Max2; i++)  for (j = 0; j < N2; j++) for (k = 0; k < N2; k++)
         AEx2[i][j][k] = abs (Ex2[i][j][k]);
-
 //  Reverse String Ordering
+    //RIstr = _iarray_gen_ (Nstr);
     for (m = 0; m < N0; m++)    RIstr[Istr[m]] = m;
 
 //  Remove terms that are not in H0
@@ -274,6 +289,7 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
             }
 
 //  Check for Zero blocks in V
+    //ifzero = _iarray2_gen_ (N, N);
     for (i = 0; i < N; i++)
         for (k = 0; k < N; k++)
         {
@@ -308,6 +324,7 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
 *   When viewd in this way, the conversion follows rule
 *       Ms(a,b,c,d) --> M(a+b*N, c+d*N)
 *   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
 //  Same Spin Two-Electron Part
     int IK, IL, JK, JL;
     ij = -1;
@@ -351,6 +368,9 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
         else    iiMax = _nchoosek_ (N - 2, No - 1);
 
 //  Gather together phases in Stmp
+        //stmp = _darray_gen_ (N0);
+        //IY = _iarray_gen_ (N0, -1);
+
         for (ii = 0; ii < iiMax; ii++)
         {
             I1 = AEx1[ii][i][k];   I2 = AEx1[ii][k][i];
@@ -401,6 +421,22 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
                 H0(j + i * N0, l + k * N0);
         }
     H0 = H0tmp;
+
+    /*delete RIstr;   delete IY;
+    for (i = 0; i < N; i++) delete [] ifzero[i];
+    delete [] ifzero;
+    for (i = 0; i < Max1; i++)
+    {
+        for (j = 0; j < N; j++) delete [] AEx1[i][j];
+        delete [] AEx1[i];
+    }
+    delete [] AEx1;
+    for (i = 0; i < Max2; i++)
+    {
+        for (j = 0; j < N2; j++) delete [] AEx2[i][j];
+        delete [] AEx2[i];
+    }
+    delete [] AEx2;*/
 }
 
 double _MDOT_ (const MatrixXd& A, const MatrixXd& B)
@@ -442,6 +478,9 @@ void _HX_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
 
     Y.setZero (Nstr, Nstr);
+    /*AEx1 = _iarray3_gen_ (Max1, N, N);
+    _copy_array3_ (Ex1, AEx1, Max1, N, N);
+    _abs_array3_ (AEx1, Max1, N, N);*/
     for (i = 0; i < Max1; i++)  for (j = 0; j < N; j++) for (k = 0; k < N; k++)
         AEx1[i][j][k] = abs (Ex1[i][j][k]);
 
@@ -451,6 +490,7 @@ void _HX_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
     Y.setZero ();
 
 //  Check for Zero Blocks in V
+    //ifzero = _iarray2_gen_ (N, N);
     for (i = 0; i < N; i++) for (k = 0; k < N; k++)
     {
         ik = cpind(i,k);    flag = true;
@@ -575,6 +615,15 @@ void _HX_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
 //  Enforce MS = 0
     MatrixXd Ytemp = Spin * Y.transpose ();
     Y += Ytemp;
+
+    /*for (i = 0; i < N; i++) delete [] ifzero[i];
+    delete [] ifzero;
+    for (i = 0; i < Max1; i++)
+    {
+        for (j = 0; j < N; j++) delete [] AEx1[i][j];
+        delete [] AEx1[i];
+    }
+    delete [] AEx1;*/
 }
 
 void _RPDM_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
@@ -636,12 +685,12 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
     const int N0 = (N0MAX < Nstr) ? (N0MAX) : (Nstr);
     const int Max1 = _nchoosek_ (N - 1, No - 1);
     const int Max2 = _nchoosek_ (N - 2, No - 2);
+    const int lenh = N * (N + 1) / 2;
     int i,j,k,l,m,a,b,ij,kl,ab,ii,jj,kk,ll,ierr,iter,Info;
     int iX,iS,iSpin,iSym;
-    vi Iocc(No), Isubst(No), Istr(N0);
+    iv1 Iocc(No), Isubst(No), Istr(N0);
     iv3 Ex1(Max1, iv2(N, iv1(N))), Ex2(Max2, iv2(N2, iv1(N2)));
-    double Energy, DE, fac, norm, eps;
-    vd Uncertainty(NS);
+    double Energy, DE, fac, norm, eps, *Uncertainty;
     MatrixXd Hd, H0, U0, X, X1, XH, X1H, Xtmp;
     VectorXd E0;    Matrix2d Hm, U; Vector2d Eig;
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
@@ -658,14 +707,17 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
                         _nchoosek_ (m - 1, No - k - 2);
 
 //  Determine which strings are connected by various operators
+    //Ex1 = _iarray3_gen_ (Max1, N, N);
+    //Ex2 = _iarray3_gen_ (Max2, N2, N2);
     _IString_ (N, No, N2, Max1, Max2, Ex1, Ex2);
 
 //  Build Diagonal part of H
     Hd.setZero (Nstr, Nstr);
+    //Iocc = _iarray_gen_ (No);   Isubst = _iarray_gen_ (No);
     _GetHd_ (N, No, Nstr, h, V, Iocc, Isubst, Hd, 1);
-    for (i = 0; i < N; i++) delete [] Zindex[i];    delete [] Zindex;
 
 //  Get N0 lowest strings
+    //Istr = _iarray_gen_ (N0);
     _GetIstr_ (N, No, Nstr, N0, Hd, Istr);
     _Isort_ (N0, Istr, &Info);
 
@@ -676,7 +728,7 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
     _eigh_ (H0, U0, E0);
 
 //  Big loop over states
-    iX = -1;
+    iX = -1;    Uncertainty = _darray_gen_ (NS);
     for (iS = 0; iS < NS; iS++)
 //  Initial vector for this state (ensure it is a singlet for now)
 //  This restarts from the input Xi vector if Xi is nonzero
@@ -714,7 +766,7 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
         XH.setZero (Nstr, Nstr);
         _HX_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, X, h, V, XH);
         Energy = _MDOT_ (X, XH);
-//        printf ("Guess energy: %18.16f\n", Energy);
+        printf ("Guess energy: %18.16f\n", Energy);
 
 //  Iteratively determine eigenvalue #iS of the Hamiltonian
         fac = 1.;  iter = 0;
@@ -830,11 +882,27 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
     cout << "=============================\n";
     printf ("State\tEnergy\t\t\tSpin Sym\tUncertainty\n");
     for (i = 0; i < NS; i++)
-        printf ("%2d\t%18.16f\t%7.5f\t\t%18.16e\n",
-            i + 1, Ei[i], Sym[i], Uncertainty[i]);
+        printf ("%2d\t%18.16f\t%7.5f\t\t%18.16e\n", i + 1, Ei[i], Sym[i], Uncertainty[i]);
 
 //  Get the (Ground Staate) 1PDM and 2PDM
+    //delete Iocc;delete Isubst;delete Istr;
+    //P2 = _darray_gen_ (lenh * (lenh + 1) / 2);
     _RPDM_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, Xi, P, P2);
+
+
+    /*delete P2;
+    for (i = 0; i < Max1; i++)
+    {
+        for (j = 0; j < N; j++) delete [] Ex1[i][j];
+        delete [] Ex1[i];
+    }
+    delete [] Ex1;
+    for (i = 0; i < Max2; i++)
+    {
+        for (j = 0; j < N2; j++) delete [] Ex2[i][j];
+        delete [] Ex2[i];
+    }
+    delete [] Ex2;*/
 }
 
 #undef THRESH

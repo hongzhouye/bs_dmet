@@ -85,7 +85,7 @@ void FRAG::_init_ (const HUBBARD& hub)
 void FRAG::_solver_ (bool _2PDM_flag_)
 {
     for (int i = 0; i < lenV; i++)  Vtot[i] = V[i] + Vpot[i];
-    for (int i = 0; i < 2 * Nimp; i++)
+    /*for (int i = 0; i < 2 * Nimp; i++)
         for (int j = 0; j < 2 * Nimp; j++)
             for (int k = 0; k < 2 * Nimp; k++)
                 for (int l = 0; l < 2 * Nimp; l++)
@@ -93,7 +93,7 @@ void FRAG::_solver_ (bool _2PDM_flag_)
                     int ik = cpind(i,k), jl = cpind(j,l);
                     if (fabs (V[cpind(ik,jl)]) > 1.E-10)
                         printf ("%3d %3d %3d %3d %18.16f\n", i,j,k,l,V[cpind(ik,jl)]);
-                }
+                }*/
     dfci._solve_ (h + hpot, Vtot);
     //dfci._1PDM_ ();
     //if (_2PDM_flag_)    dfci._2PDM_ ();
