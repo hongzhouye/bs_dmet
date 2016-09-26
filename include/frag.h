@@ -70,7 +70,7 @@ void FRAG::_init_ (const HUBBARD& hub)
     hr._xform_ (hub, sm, h, V);
 
     // solver
-    dfci._init_ (2 * Nimp, Nimp, 12);
+    dfci._init_ (2 * Nimp, Nimp, 4);
     dfci.guess_read = false;
 
     // tot # of constraints

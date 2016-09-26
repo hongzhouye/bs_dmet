@@ -53,6 +53,8 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
     double scale, obj_norm;
     MatrixXd J;
 
+    clock_t t1, t2, dt_Jac = 0, dt_brent = 0;
+
     while (converge != true)
     {
         iter++;
@@ -60,7 +62,9 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         // switch FCI guess mode to read
         //frag.dfci.mode = "read";
         frag.dfci.guess_read = true;
+        t1 = clock ();
         J = _fd_Jac_ (func, u, frag);
+        t2 = clock ();  dt_Jac += t2 - t1;
 
         dx = J.colPivHouseholderQr (). solve (-fx);
         double linsol_err = (J * dx + fx).norm ();
@@ -72,8 +76,10 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         else if (linsol_err > LINSOL_TOL1)
             cout << "Warning: accuracy of the linsolver is low.\n\n";
 
+        t1 = clock ();
         obj_norm = _brent_ (-1., 1., 2., func, &siter, BRENT_TOL,
             &scale, u, dx, frag);
+        t2 = clock ();  dt_brent += t2 - t1;
 
         if (scale < 0)  cout << "Warning: stepped backwards.\n\n";
         //frag.dfci.guess_read = false;
@@ -97,6 +103,15 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
         printf ("scale: %10.7f\n", scale);
         printf ("scale iterations: %d\n\n", siter); fflush (0);
     }
+
+    cout << "=========================\n";
+    cout << "|     TIME SUMMARY      |\n";
+    cout << "=========================\n";
+    cout << "JAC Time: " << dt_Jac /
+        (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
+    cout << "BRT Time: " << dt_brent /
+        (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
+
     return u;
 }
 

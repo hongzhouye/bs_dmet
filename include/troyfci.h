@@ -10,7 +10,7 @@
 using namespace std;
 using namespace Eigen;
 
-#define THRESH 1.E-8
+#define THRESH 1.E-9
 #define MAXITER 5000
 
 // A global index matrix
