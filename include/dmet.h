@@ -53,7 +53,7 @@ void DMET::_bs_dmet_ ()
 
     // DMET energy;
     _dmet_energy_ (bs.frag.h, bs.frag.V, bs.frag.dfci.P,
-        bs.frag.dfci.G, bs.frag.dfci.N);
+        bs.frag.dfci.G, bs.frag.dfci.No);
 }
 
 // Mean-field case: 2PDM is not needed
@@ -155,7 +155,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
             E1 += h(mu, nu) * P(nu, mu);
-    E1 /= 2.;
+    E1 /= (N / 2.);
 
     // new storage style
     for (mu = 0; mu < N; mu++)
@@ -169,7 +169,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
                     E2 += G[cpind(mn,ls)] * V[cpind(mn,ls)];
                 }
         }
-    //E2 /= N;
+    E2 /= N;
 
     cout << "========================\n";
     cout << "|      DMET ENERGY     |\n";
