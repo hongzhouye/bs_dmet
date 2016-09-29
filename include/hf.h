@@ -7,6 +7,7 @@
 #include <vector>
 #include <valarray>
 #include <map>
+#include <chrono>
 //#include "easylogging++.h"
 
 using namespace Eigen;

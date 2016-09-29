@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace std::chrono;
 
 int main (int argc, char * argv[])
 {
@@ -17,7 +18,12 @@ int main (int argc, char * argv[])
 	else	{cout << "Too many input files!\n";	exit (1);}
 
 	// bootstrap
+	high_resolution_clock::time_point t1 = high_resolution_clock::now ();
 	dmet._bs_dmet_ ();
+	high_resolution_clock::time_point t2 = high_resolution_clock::now ();
+	duration<double> dt_bs = duration_cast<duration<double> >(t2 - t1);
+	cout << "=========================\n";
+	cout << "Total wall time: " << dt_bs.count () << " sec" << endl << endl;
 
 	// check
 	//dmet._dmet_check_ ();

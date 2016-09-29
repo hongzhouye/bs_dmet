@@ -171,9 +171,9 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
         }
     E2 /= N;
 
-    cout << "========================\n";
-    cout << "|      DMET ENERGY     |\n";
-    cout << "========================\n";
+    cout << "=========================\n";
+    cout << "|      DMET ENERGY      |\n";
+    cout << "=========================\n";
 
     printf ("     ");
     for (int i = 0; i < frag.Ncenter; i++)
@@ -191,6 +191,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     for (int i = 0; i < frag.Ncenter; i++)
         printf ("%10.7f  ", Ec1[i] + Ec2[i]);
     printf ("%10.7f\n", E1 + E2);
+	cout << endl;
 
     return E1 + E2;
 }
