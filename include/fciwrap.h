@@ -61,8 +61,8 @@ void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
 //  get h from input
     _get_h_ (hinp);
 
-    void _write_ (const MatrixXd&, double *);
-    if (Xi.size () == 0)    _write_ (hinp, Vinp);
+    //void _write_ (const MatrixXd&, double *);
+    //if (Xi.size () == 0)    _write_ (hinp, Vinp);
 
 //  allocate memory for NS-dependent quantities
     if (!guess_read)

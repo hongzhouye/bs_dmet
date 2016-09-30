@@ -202,7 +202,7 @@ void SCF::_scf_ ()
         if (scf_error < SCF_THR)    break;
 
         // print and increase iter
-        printf ("%4d\t%10.7e\n", iter, scf_error);
+        //printf ("%4d\t%10.7e\n", iter, scf_error);
         iter ++;
     }
     if (iter >= MAX_SCF_ITER)

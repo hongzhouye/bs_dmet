@@ -65,7 +65,6 @@ void FRAG::_init_ (const HUBBARD& hub)
 
     // Schmidt decomposition
     sm._schmidt_ (hub.C);
-    cout << "sm.TE:\n" << sm.TE << endl << endl;
 
     // make hred
     hr._xform_ (hub, sm, h, V);
