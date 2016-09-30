@@ -15,14 +15,13 @@ using namespace std;
 
 #define cpind(i,j) (i>j)?(ioff[i]+j):(ioff[j]+i)
 #define RCA_THR 1E-2    // thr to switch to diis
-#define SCF_THR 1E-8
 #define MAX_SCF_ITER 1000
 
 class SCF
 {
     private:
-        void _print_ ();
         void _rca_ (const MatrixXd&, double);
+        double SCF_THR;
     public:
         string scf_type;
         int K, N;               // basis set size, # of e^-
@@ -33,21 +32,21 @@ class SCF
         double E_scf;           // electronic energy
         double scf_error;       // ||[F, P]||
 
-        void _init_ (const MatrixXd&, double *, int, int);
-                                // SCF setup, diis and rca are ON
-        void _init_ (const MatrixXd&, double *, int, int, int ,int);
-                                // SCF setup, give diis and rca
-        void _init_hub_ (const MatrixXd&, double, int, int);
+        void _init_ (const MatrixXd&, double *, const int, const int,
+            const double, const string, const int, const int);
+        void _init_hub_ (const MatrixXd&, const double, const int, const int,
+            const double, const string, const int, const int);
                                 // SCF setup for HUBBARD, diis and rca are ON
         void _guess_ (string);
         void _fock_ ();
         void _fock_hub_ ();
         void _scf_ ();
         double _get_hf_E_ ();
+        void _print_ ();
 };
 
 // default setup: diis and rca are both toggled
-void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
+/*void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
 {
     scf_type = "gen";
     K = Nbs;    N = Ne;
@@ -63,10 +62,12 @@ void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne)
     // setup matrix size
     P.setZero (K, K);    C.setZero (K, K);   F.setZero (K, K);
     occ.setZero (K, K);    occ.topLeftCorner (N, N).diagonal ().setOnes ();
-}
+}*/
 
 // specify whether diis and rca are used or not
-void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne, int idiis, int irca)
+void SCF::_init_ (const MatrixXd& hinp, double *Vinp, const int Nbs, const int Ne,
+    const double scf_thresh = 1E-8, const string guess = "core",
+    const int idiis = 1, const int irca = 1)
 {
     scf_type = "gen";
     K = Nbs;    N = Ne;
@@ -82,9 +83,15 @@ void SCF::_init_ (const MatrixXd& hinp, double *Vinp, int Nbs, int Ne, int idiis
     // setup matrix size
     P.setZero (K, K);    C.setZero (K, K);   F.setZero (K, K);
     occ.setZero (K, K);    occ.topLeftCorner (N, N).diagonal ().setOnes ();
+
+    // initial guess
+    SCF_THR = scf_thresh;
+    _guess_ (guess);
 }
 
-void SCF::_init_hub_ (const MatrixXd& hubh, double hubU, int Nbs, int Ne)
+void SCF::_init_hub_ (const MatrixXd& hubh, const double hubU, const int Nbs,
+    const int Ne, const double scf_thresh = 1E-8, const string guess = "core",
+    const int idiis = 0, const int irca = 1)
 {
     scf_type = "hub";
     K = Nbs;    N = Ne;
@@ -92,11 +99,15 @@ void SCF::_init_hub_ (const MatrixXd& hubh, double hubU, int Nbs, int Ne)
     U = hubU;
 
     // scf acceleration
-    diis = 0;   rca = 1;
+    diis = idiis;   rca = irca;
 
     // setup matrix size
     P.setZero (K, K);    C.setZero (K, K);   F.setZero (K, K);
     occ.setZero (K, K);    occ.topLeftCorner (N, N).diagonal ().setOnes ();
+
+    // initial guess
+    SCF_THR = scf_thresh;
+    _guess_ (guess);
 }
 
 // SCF initialization
@@ -116,23 +127,20 @@ void SCF::_fock_ ()
     MatrixXd G; G.setZero (K, K);
     int mu, nu, la, si, mn, ms, ls, ln;
 
-	for (nu = 0; nu < K; nu++)
-		for (mu = 0; mu < K; mu++)
+	for (nu = 0; nu < K; nu++) for (mu = 0; mu < K; mu++)
+    {
+        mn = cpind(mu,nu);
+        for (si = 0; si < K; si++)
         {
-            mn = cpind(mu,nu);
-            for (si = 0; si < K; si++)
+            ms = cpind(mu,si);
+            for (la = 0; la < K; la++)
             {
-                ms = cpind(mu,si);
-                for (la = 0; la < K; la++)
-                {
-                    ls = cpind(la,si);
-                    ln = cpind(la,nu);
-					G(mu, nu) += P(si, la) * (2. *
-							V[cpind(mn,ls)] -
-							V[cpind(ms,ln)]);
-                }
+                ls = cpind(la,si);
+                ln = cpind(la,nu);
+				G(mu, nu) += P(si, la) * (2. * V[cpind(mn,ls)] - V[cpind(ms,ln)]);
             }
         }
+    }
 	F = G + h;
 }
 
@@ -194,7 +202,7 @@ void SCF::_scf_ ()
         if (scf_error < SCF_THR)    break;
 
         // print and increase iter
-        //printf ("%4d\t%10.7e\n", iter, scf_error);
+        printf ("%4d\t%10.7e\n", iter, scf_error);
         iter ++;
     }
     if (iter >= MAX_SCF_ITER)
@@ -222,4 +230,6 @@ void SCF::_print_ ()
     cout << "Energy levels:\n" << e << "\n\n";
 	cout << "Density matrix:\n" << P << "\n\n";
 }
+
+#undef RCA_THR
 #endif

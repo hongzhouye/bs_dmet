@@ -70,7 +70,6 @@ void HUBBARD::_hubbard_rhf_ ()
 	_init_ ();
 	SCF scf;
 	scf._init_hub_ (h, U, K, N);
-	scf._guess_ ("core");
 	scf._scf_ ();
 	P = scf.P;	C = scf.C;	F = scf.F;	e = scf.e;	n = P.diagonal ();
 }

@@ -29,21 +29,57 @@ class DMET
 
 void DMET::_dmet_init_ (char *fname)
 {
-    // read parameters from the input file
+// read parameters from the input file
     _read_ (fname, hub, bs.frag);
 
-    // set up ioff -- the lookup table
+// set up ioff -- the lookup table
 	//int K = bs.frag.Nimp * 2;
     int lenh = hub.K * (hub.K + 1) / 2;
     _gen_ioff_ (lenh * (lenh + 1) / 2);
     //_gen_ioff_ (hub.K * (hub.K + 1) / 2);
 
-    // Hubbard Hartree-Fock calculation
+// Hubbard Hartree-Fock calculation
 	hub._hubbard_rhf_ ();
     //hub._print_ ();
 
-    // Bootstrap init
+// Bootstrap init
     bs._init_ (hub);
+
+//  frankentonian test
+    //  scf
+    SCF hrscf;
+    hrscf._init_ (bs.frag.h, bs.frag.V, bs.frag.Nimp * 2, bs.frag.Nimp);
+    hrscf._scf_ ();
+    hrscf._print_ ();
+    _dmet_energy_ (bs.frag.h, bs.frag.V, hrscf.P, bs.frag.Nimp);
+    //  schmidt decomp
+    SCHMIDT hrsm;
+    hrsm._init_ (hrscf.K, hrscf.N, 1);
+    hrsm.frag[0] = 0;
+    hrsm._schmidt_ (hrscf.C);
+    //  hred
+    HRED hr;
+    MatrixXd hfrank(2, 2);
+    double *Vfrank = _darray_gen_ (16);
+    hr._xform_ (bs.frag.h, bs.frag.V, hrsm, hfrank, Vfrank);
+
+    // directly schmidt decomp
+    SCHMIDT dirsm;
+    dirsm._init_ (hub.K, hub.N, 1);
+    dirsm.frag[0] = 0;
+    dirsm._schmidt_ (hub.C);
+    //  hred
+    HRED hrdir;
+    MatrixXd hfrankdir(2, 2);
+    double *Vfrankdir = _darray_gen_ (16);
+    hrdir._xform_ (hub, dirsm, hfrankdir, Vfrankdir);
+    // scf to check
+    SCF scfcheck;
+    scfcheck._init_ (hfrankdir, Vfrankdir, 2, 1, 1E-6, "core", 1, 0);
+    scfcheck._scf_ ();
+    //scfcheck._print_ ();
+    cout << "frankdir P:\n" << scfcheck.P << endl;
+    _dmet_energy_ (hfrankdir, Vfrankdir, scfcheck.P, 1);
 }
 
 void DMET::_bs_dmet_ ()
@@ -60,12 +96,12 @@ void DMET::_bs_dmet_ ()
 double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
 {
     int i, mu, nu, la, si, mn, ls, mnls, K = h.rows ();
-    double E = 0;
+    double E1 = 0, E2 = 0;
 
     for (mu = 0; mu < N; mu++)
         for (nu = 0; nu < K; nu++)
-            E += h(mu, nu) * P(nu, mu);
-    E *= 2.;
+            E1 += h(mu, nu) * P(nu, mu);
+    E1 *= 2. / N;
 
     // CHECK: mean-field 2PDM
     int lenh = K * (K + 1) / 2;
@@ -91,11 +127,18 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
                 for (si = 0; si < K; si++)
                 {
                     ls = cpind(la,si);  mnls = cpind(mn,ls);
-                    E += G[mnls] * V[mnls];
+                    E2 += G[mnls] * V[mnls];
                 }
         }
+    E2 /= N;
 
-    return E;
+    cout << "============================\n";
+    cout << "|      HF-in-HF ENERGY      |\n";
+    cout << "============================\n";
+    printf ("1P\t\t2P\t\ttot\n");
+    printf ("%10.7f\t%10.7f\t%10.7f\n", E1, E2, E1 + E2);
+
+    return E1 + E2;
 }
 
 void DMET::_fci_check_ ()
@@ -245,7 +288,6 @@ void DMET::_dmet_check_ ()
     cout << "=======================" << endl;
     SCF scf;
     scf._init_ (bs.frag.h, bs.frag.V, 2 * bs.frag.Nimp, bs.frag.Nimp);
-    scf._guess_ ("core");
     scf._scf_ ();
     printf ("HF-in-HF embedding energy: %18.16f\n\n",
 		_dmet_energy_ (bs.frag.h, bs.frag.V, scf.P, scf.N));
