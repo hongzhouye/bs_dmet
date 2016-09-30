@@ -58,13 +58,13 @@ void FRAG::_init_ (const HUBBARD& hub)
     Vtot = _darray_gen_ (lenV);
 
     // set up sm
-    sm._init_ (hub, Nimp);
+    sm._init_ (hub.K, hub.N, Nimp);
     int count = 0;
 	for (auto i = fragments.begin (); i != fragments.end (); i++)
 		sm.frag[count++] = i->second;
 
     // Schmidt decomposition
-    sm._schmidt_ (hub);
+    sm._schmidt_ (hub.C);
 
     // make hred
     hr._xform_ (hub, sm, h, V);

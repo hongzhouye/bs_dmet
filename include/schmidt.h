@@ -20,32 +20,34 @@ class SCHMIDT
 		VectorXd d;				// Singular values
 		MatrixXd C;				// W-transformed C's
 		MatrixXd T, TE;
-		void _init_ (const HUBBARD&, int);
-		void _schmidt_ (const HUBBARD&);
+		void _init_ (int, int, int);
+		void _schmidt_ (const MatrixXd&);
 		MatrixXd _make_P_frag_ (HUBBARD&);
 		void _print_ ();
 };
 
-void SCHMIDT::_init_ (const HUBBARD& hub, int fragNimp)
+void SCHMIDT::_init_ (int Nbs, int Ne, int fragNimp)
 {
-	K = hub.K;	N = hub.N;
-	Nimp = fragNimp;
+	// get values from input
+	K = Nbs;	N = Ne;		Nimp = fragNimp;
+
+	// malloc memory for frag
 	frag = _iarray_gen_ (Nimp);
 }
 
-void SCHMIDT::_schmidt_ (const HUBBARD& hub)
+void SCHMIDT::_schmidt_ (const MatrixXd& Coriginal)
 {
 	// prefix 'r' for raw (i.e. untransformed)
 	MatrixXd rCF;	rCF.setZero (Nimp, N);
 	for (int i = 0; i < Nimp; i++)
-		rCF.row (i) = hub.C.block (frag[i], 0, 1, N);
+		rCF.row (i) = Coriginal.block (frag[i], 0, 1, N);
 
 	MatrixXd M;
 	M = rCF.transpose () * rCF;
 
 	_eigh_ (M, W, d);	_revert_ (W, d);
 
-	C = hub.C.leftCols (N) * W;
+	C = Coriginal.leftCols (N) * W;
 	//cout << "Schmidt decomposed C:\n" << C << "\n\n";
 
 	_form_xform_mat_ ();
