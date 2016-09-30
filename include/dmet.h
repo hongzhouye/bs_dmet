@@ -45,40 +45,51 @@ void DMET::_dmet_init_ (char *fname)
 // Bootstrap init
     bs._init_ (hub);
 
+//  Does fci with 2e interaction turned off agree with HF?
+    FCIWRAP fci;
+    fci._init_ (2 * bs.frag.Nimp, bs.frag.Nimp, 2);
+    fci.guess_read = false;
+    fci._solve_ (bs.frag.h, bs.frag.V);
+    printf ("direct FCI energy: %18.16f\n", fci.Ei);
+    double *Vzero = _darray_gen_ (bs.frag.lenV);
+    _dmet_energy_ (bs.frag.h, Vzero, fci.P, fci.G, fci.No);
+
 //  frankentonian test
-    //  scf
+    //  do scf on Hred
     SCF hrscf;
     hrscf._init_ (bs.frag.h, bs.frag.V, bs.frag.Nimp * 2, bs.frag.Nimp);
     hrscf._scf_ ();
-    hrscf._print_ ();
     _dmet_energy_ (bs.frag.h, bs.frag.V, hrscf.P, bs.frag.Nimp);
-    //  schmidt decomp
+    //  schmidt decomp C of scf_red onto one site
     SCHMIDT hrsm;
     hrsm._init_ (hrscf.K, hrscf.N, 1);
     hrsm.frag[0] = 0;
     hrsm._schmidt_ (hrscf.C);
-    //  hred
+    //  Reconstruct Hred from the new SCHMIDT
     HRED hr;
     MatrixXd hfrank(2, 2);
     double *Vfrank = _darray_gen_ (16);
     hr._xform_ (bs.frag.h, bs.frag.V, hrsm, hfrank, Vfrank);
+    //  do scf on this new Hred
+    SCF scfnew;
+    scfnew._init_ (hfrank, Vfrank, 2, 1);
+    scfnew._scf_ ();
+    _dmet_energy_ (hfrank, Vfrank, scfnew.P, 1);
 
-    // directly schmidt decomp
+    // directly schmidt decomp the overall C onto one site
     SCHMIDT dirsm;
     dirsm._init_ (hub.K, hub.N, 1);
     dirsm.frag[0] = 0;
     dirsm._schmidt_ (hub.C);
-    //  hred
+    //  Reconstruct Hred from this SCHMIDT
     HRED hrdir;
     MatrixXd hfrankdir(2, 2);
     double *Vfrankdir = _darray_gen_ (16);
     hrdir._xform_ (hub, dirsm, hfrankdir, Vfrankdir);
-    // scf to check
+    // calculate HF-in-HF energy
     SCF scfcheck;
     scfcheck._init_ (hfrankdir, Vfrankdir, 2, 1, 1E-6, "core", 1, 0);
     scfcheck._scf_ ();
-    //scfcheck._print_ ();
-    cout << "frankdir P:\n" << scfcheck.P << endl;
     _dmet_energy_ (hfrankdir, Vfrankdir, scfcheck.P, 1);
 }
 
@@ -136,7 +147,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, int N)
     cout << "|      HF-in-HF ENERGY      |\n";
     cout << "============================\n";
     printf ("1P\t\t2P\t\ttot\n");
-    printf ("%10.7f\t%10.7f\t%10.7f\n", E1, E2, E1 + E2);
+    printf ("%10.7f\t%10.7f\t%10.7f\n\n", E1, E2, E1 + E2);
 
     return E1 + E2;
 }
