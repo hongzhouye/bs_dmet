@@ -50,6 +50,7 @@ void DMET::_dmet_init_ (char *fname)
     fci._init_ (2 * bs.frag.Nimp, bs.frag.Nimp, 2);
     fci.guess_read = false;
     fci._solve_ (bs.frag.h, bs.frag.V);
+    //cout << "frag.h:\n" << bs.frag.h << endl << endl;
     printf ("direct FCI energy: %18.16f\n", fci.Ei);
     double *Vzero = _darray_gen_ (bs.frag.lenV);
     _dmet_energy_ (bs.frag.h, Vzero, fci.P, fci.G, fci.No);

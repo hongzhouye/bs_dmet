@@ -75,7 +75,6 @@ void _RecurEx1_ (int N, int No, int i, int a, int Max1,
             _RecurEx1_ (N, No, i, a, Max1, Iocc, Ex1,
                 IRecur + 1, m, Ind);
     }
-    //delete Isubst;
     return;
 }
 
@@ -124,98 +123,6 @@ void _RecurEx2_ (int N, int No, int N2, int i, int j, int a, int b,
         else
             _RecurEx2_ (N, No, N2, i, j, a, b, ij, ab,
                 Max2, Iocc, Ex2, IRecur + 1, m, Ind);
-    }
-    //delete Isubst;
-    return;
-}
-
-void _IString_ (int N, int No, int N2,
-    int Max1, int Max2, iv3& Ex1, iv3& Ex2)
-{
-    int i, j, k, a, b, ij, ab, IRecur, m, Ind;
-    iv1 Iocc(No);
-
-//  Find Strings that differ by a Single Excitation
-    for (i = 0; i < N; i++)
-        for (a = 0; a < N; a++)
-        {
-            m = 0; Ind = 1; /* !!!!! INDEX STARTS FROM 1 !!!!! */
-            _RecurEx1_ (N, No, i, a, Max1, Iocc, Ex1, 0, &m, &Ind);
-        }
-
-//  Find Strings that differ by a Double Excitation
-    ij = -1;
-    for (i = 0; i < N; i++)
-        for (j = i + 1; j < N; j++)
-        {
-            ij++; ab = -1;
-            for (a = 0; a < N; a++)
-                for (b = a + 1; b < N; b++)
-                {
-                    ab++;  m = 0;
-                    Ind = 1;    /* !!!!! INDEX STARTS FROM 1 !!!!! */
-                    _RecurEx2_ (N, No, N2, i, j, a, b, ij, ab,
-                        Max2, Iocc, Ex2, 0, &m, &Ind);
-                }
-        }
-    //delete Iocc;
-    return;
-}
-
-int _Index_ (int No, const iv1& Iocc)
-{
-    int i, Isign;
-    int index = 0;  /* !!!!! INDEX STARTS FROM 1 !!!!! */
-
-    for (i = 0; i < No; i++)    index += Zindex[i][Iocc[i]];
-    return index;
-}
-
-void _GetHd_ (int N, int No, int Nstr, double *h, double *V,
-    iv1& Iocca, iv1& Ioccb, MatrixXd& Hd, int IRecur)
-{
-    int i,j,imin,jmin,k,ka,kb,l,la,lb,Isigna,Isignb;
-    int kka, kkb, lla, llb, kla, klb;
-    double tmp;
-
-    if (IRecur == 1)    imin = jmin = 0;
-    else
-    {
-        imin = Iocca[IRecur - 2] + 1;
-        jmin = Ioccb[IRecur - 2] + 1;
-    }
-
-    for (i = imin; i < N; i++)
-    {
-        Iocca[IRecur - 1] = i;
-        for (j = jmin; j < N; j++)
-        {
-            Ioccb[IRecur - 1] = j;
-            if (IRecur == No)
-            {
-                tmp = 0.;
-                for (k = 0; k < No; k++)
-                {
-                    ka = Iocca[k];  kb = Ioccb[k];
-                    kka = cpind(ka,ka); kkb = cpind(kb,kb);
-//  Spin Contaminated Elements
-                    tmp += h[kka] + h[kkb];
-                    for (l = 0; l < No; l++)
-                    {
-                        la = Iocca[l];  lb = Ioccb[l];
-                        lla = cpind(la,la); llb = cpind(lb,lb);
-                        kla = cpind(ka,la); klb = cpind(kb,lb);
-                        tmp += 0.5 * (
-                            V[cpind(kka,lla)] - V[cpind(kla,kla)] +
-                            V[cpind(kka,llb)] + V[cpind(kkb,lla)] +
-                            V[cpind(kkb,llb)] - V[cpind(klb,klb)]);
-                    }
-                }
-                Hd (_Index_(No, Iocca), _Index_ (No, Ioccb)) = tmp;
-            }
-            else
-                _GetHd_ (N, No, Nstr, h, V, Iocca, Ioccb, Hd, IRecur + 1);
-        }
     }
     return;
 }
@@ -411,22 +318,6 @@ void _GetH0_ (int N, int No, int N0, int N2, int Max1, int Max2,
                 H0(j + i * N0, l + k * N0);
         }
     H0 = H0tmp;
-
-    /*delete RIstr;   delete IY;
-    for (i = 0; i < N; i++) delete [] ifzero[i];
-    delete [] ifzero;
-    for (i = 0; i < Max1; i++)
-    {
-        for (j = 0; j < N; j++) delete [] AEx1[i][j];
-        delete [] AEx1[i];
-    }
-    delete [] AEx1;
-    for (i = 0; i < Max2; i++)
-    {
-        for (j = 0; j < N2; j++) delete [] AEx2[i][j];
-        delete [] AEx2[i];
-    }
-    delete [] AEx2;*/
 }
 
 double _MDOT_ (const MatrixXd& A, const MatrixXd& B)
@@ -601,15 +492,6 @@ void _HX_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
 //  Enforce MS = 0
     MatrixXd Ytemp = Spin * Y.transpose ();
     Y += Ytemp;
-
-    /*for (i = 0; i < N; i++) delete [] ifzero[i];
-    delete [] ifzero;
-    for (i = 0; i < Max1; i++)
-    {
-        for (j = 0; j < N; j++) delete [] AEx1[i][j];
-        delete [] AEx1[i];
-    }
-    delete [] AEx1;*/
 }
 
 void _RPDM_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
@@ -643,8 +525,140 @@ void _RPDM_ (int N, int No, int N2, int Max1, int Max2, int Nstr,
     delete T1;  delete T2;
 }
 
-void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
-    vMatrixXd& Xi, double *Ei, double *Sym, MatrixXd& P, double *P2)
+class TROYFCI
+{
+    private:
+        int **Zindex;
+        int _Index_ (int, const iv1&);
+        void _IString_ (int, int, int, int, int, iv3&, iv3&);
+        void _GetHd_ (int, int, int, double *h, double *V, iv1&, iv1&, MatrixXd&, int);
+    public:
+        int N, No, N2, Nstr, N0, NS, Max1, Max2, lenh;
+        iv3 Ex1, Ex2;
+        void _init_ (int, int, int, int);
+        void _FCIman_ (double *, double *, vMatrixXd&, double *, double *,
+            MatrixXd&, double *);
+};
+
+void TROYFCI::_IString_ (int N, int No, int N2, int Max1, int Max2,
+    iv3& Ex1, iv3& Ex2)
+{
+    int i, j, k, a, b, ij, ab, IRecur, m, Ind;
+    iv1 Iocc(No);
+
+//  Find Strings that differ by a Single Excitation
+    for (i = 0; i < N; i++)
+        for (a = 0; a < N; a++)
+        {
+            m = 0; Ind = 1; /* !!!!! INDEX STARTS FROM 1 !!!!! */
+            _RecurEx1_ (N, No, i, a, Max1, Iocc, Ex1, 0, &m, &Ind);
+        }
+
+//  Find Strings that differ by a Double Excitation
+    ij = -1;
+    for (i = 0; i < N; i++)
+        for (j = i + 1; j < N; j++)
+        {
+            ij++; ab = -1;
+            for (a = 0; a < N; a++)
+                for (b = a + 1; b < N; b++)
+                {
+                    ab++;  m = 0;
+                    Ind = 1;    /* !!!!! INDEX STARTS FROM 1 !!!!! */
+                    _RecurEx2_ (N, No, N2, i, j, a, b, ij, ab,
+                        Max2, Iocc, Ex2, 0, &m, &Ind);
+                }
+        }
+    return;
+}
+
+int TROYFCI::_Index_ (int No, const iv1& Iocc)
+{
+    int i, Isign;
+    int index = 0;  /* !!!!! INDEX STARTS FROM 1 !!!!! */
+
+    for (i = 0; i < No; i++)    index += Zindex[i][Iocc[i]];
+    return index;
+}
+
+void TROYFCI::_GetHd_ (int N, int No, int Nstr, double *h, double *V,
+    iv1& Iocca, iv1& Ioccb, MatrixXd& Hd, int IRecur)
+{
+    int i,j,imin,jmin,k,ka,kb,l,la,lb,Isigna,Isignb;
+    int kka, kkb, lla, llb, kla, klb;
+    double tmp;
+
+    if (IRecur == 1)    imin = jmin = 0;
+    else
+    {
+        imin = Iocca[IRecur - 2] + 1;
+        jmin = Ioccb[IRecur - 2] + 1;
+    }
+
+    for (i = imin; i < N; i++)
+    {
+        Iocca[IRecur - 1] = i;
+        for (j = jmin; j < N; j++)
+        {
+            Ioccb[IRecur - 1] = j;
+            if (IRecur == No)
+            {
+                tmp = 0.;
+                for (k = 0; k < No; k++)
+                {
+                    ka = Iocca[k];  kb = Ioccb[k];
+                    kka = cpind(ka,ka); kkb = cpind(kb,kb);
+//  Spin Contaminated Elements
+                    tmp += h[kka] + h[kkb];
+                    for (l = 0; l < No; l++)
+                    {
+                        la = Iocca[l];  lb = Ioccb[l];
+                        lla = cpind(la,la); llb = cpind(lb,lb);
+                        kla = cpind(ka,la); klb = cpind(kb,lb);
+                        tmp += 0.5 * (
+                            V[cpind(kka,lla)] - V[cpind(kla,kla)] +
+                            V[cpind(kka,llb)] + V[cpind(kkb,lla)] +
+                            V[cpind(kkb,llb)] - V[cpind(klb,klb)]);
+                    }
+                }
+                Hd (_Index_(No, Iocca), _Index_ (No, Ioccb)) = tmp;
+            }
+            else
+                _GetHd_ (N, No, Nstr, h, V, Iocca, Ioccb, Hd, IRecur + 1);
+        }
+    }
+    return;
+}
+
+void TROYFCI::_init_ (int Nbs, int Ne, int N0MAX, int Nstates)
+{
+    N = Nbs;    No = Ne;    NS = Nstates;
+    Nstr = _nchoosek_ (N, No);
+    N0 = (N0MAX < Nstr) ? (N0MAX) : (Nstr);
+    N2 = _nchoosek_ (N, 2);
+    Max1 = _nchoosek_ (N - 1, No - 1);
+    Max2 = _nchoosek_ (N - 2, No - 2);
+    lenh = _nchoosek_ (N + 1, 2);
+
+//  Build indexing array for future use
+    Zindex = _iarray2_gen_ (N, N);
+    int k, l, m;
+    for (k = 0; k < No; k++)    for (l = k; l <= N - No + k; l++)
+    if (k == No - 1)    Zindex[k][l] = l - k;
+    else
+        for (m = N - l; m < N - k; m++)
+            Zindex[k][l] += _nchoosek_ (m , No - k - 1) -
+                _nchoosek_ (m - 1, No - k - 2);
+
+//  Determine which strings are connected by various operators
+    for (int i = 0; i < Max1; i++){ iv2 temp(N, iv1(N)); Ex1.push_back (temp);}
+    for (int i = 0; i < Max2; i++){ iv2 temp(N2, iv1(N2)); Ex2.push_back (temp);}
+    _IString_ (N, No, N2, Max1, Max2, Ex1, Ex2);
+
+}
+
+void TROYFCI::_FCIman_ (double *h, double *V, vMatrixXd& Xi,
+    double *Ei, double *Sym, MatrixXd& P, double *P2)
 /*********************************************************************
 *   N       - Number of Basis Functions
 *   No      - Number of Alpha electrons (=Number of Beta Electrons)
@@ -666,37 +680,15 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
 *   H1s     - Full hamiltonian for 1-site embedding
 **********************************************************************/
 {
-    const int N2 = _nchoosek_ (N, 2);
-    const int Nstr = _nchoosek_ (N, No);
-    const int N0 = (N0MAX < Nstr) ? (N0MAX) : (Nstr);
-    const int Max1 = _nchoosek_ (N - 1, No - 1);
-    const int Max2 = _nchoosek_ (N - 2, No - 2);
-    const int lenh = N * (N + 1) / 2;
     int i,j,k,l,m,a,b,ij,kl,ab,ii,jj,kk,ll,ierr,iter,Info;
     int iX,iS,iSpin,iSym;
     iv1 Iocc(No), Isubst(No), Istr(N0);
-    iv3 Ex1(Max1, iv2(N, iv1(N))), Ex2(Max2, iv2(N2, iv1(N2)));
     double Energy, DE, fac, norm, eps, *Uncertainty;
     MatrixXd Hd, H0, U0, X, X1, XH, X1H, Xtmp;
     VectorXd E0;    Matrix2d Hm, U; Vector2d Eig;
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
 
     Energy = zero; fac = one;
-//  Build indexing array for future use
-    Zindex = _iarray2_gen_ (N, N);
-    for (k = 0; k < No; k++)
-        for (l = k; l <= N - No + k; l++)
-            if (k == No - 1)    Zindex[k][l] = l - k;
-            else
-                for (m = N - l; m < N - k; m++)
-                    Zindex[k][l] += _nchoosek_ (m , No - k - 1) -
-                        _nchoosek_ (m - 1, No - k - 2);
-
-//  Determine which strings are connected by various operators
-    //Ex1 = _iarray3_gen_ (Max1, N, N);
-    //Ex2 = _iarray3_gen_ (Max2, N2, N2);
-    _IString_ (N, No, N2, Max1, Max2, Ex1, Ex2);
-
 //  Build Diagonal part of H
     Hd.setZero (Nstr, Nstr);
     //Iocc = _iarray_gen_ (No);   Isubst = _iarray_gen_ (No);
@@ -855,7 +847,7 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
 
 //  End of the Loop for FCI iteration
         }
-//        printf ("Done after %4d iterations.\n", iter);
+//          printf ("Done after %4d iterations.\n", iter);
 //  Energy, Uncertainty for THIS State
         _HX_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, X, h, V, XH);
         Energy = _MDOT_(X,XH)/X.squaredNorm ();
@@ -868,13 +860,10 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
     cout << "=============================\n";
     printf ("State\tEnergy\t\t\tSpin Sym\tUncertainty\n");
     for (i = 0; i < NS; i++)
-        printf ("%2d\t%18.16f\t%7.5f\t\t%18.16e\n", i + 1, Ei[i], Sym[i], Uncertainty[i]);
-*/
+        printf ("%2d\t%18.16f\t%7.5f\t\t%18.16e\n", i + 1, Ei[i], Sym[i], Uncertainty[i]);*/
+
 //  Get the (Ground Staate) 1PDM and 2PDM
     _RPDM_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, Xi, P, P2);
-
-    for (i = 0; i < N; i++) delete [] Zindex[i];
-    delete [] Zindex;
 }
 
 #undef THRESH

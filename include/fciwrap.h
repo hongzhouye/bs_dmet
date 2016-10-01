@@ -32,6 +32,7 @@ class FCIWRAP
         double *h, *G, Ei, Sym;
         MatrixXd P;
         vMatrixXd Xi;
+        TROYFCI fci;
         bool guess_read;
         void _init_ (int, int, int);
         void _solve_ (const MatrixXd&, double *);
@@ -54,6 +55,9 @@ void FCIWRAP::_init_ (int Nbs, int Ne, int N0max)
     int lenh = N * (N + 1) / 2, lenV = lenh * (lenh + 1) / 2;
     h = _darray_gen_ (lenh);
     P.setZero (N, N);           G = _darray_gen_ (lenV);
+
+//  initialize troyfci
+    fci._init_ (N, No, N0MAX, 1);
 }
 
 void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
@@ -61,8 +65,7 @@ void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
 //  get h from input
     _get_h_ (hinp);
 
-    //void _write_ (const MatrixXd&, double *);
-    //if (Xi.size () == 0)    _write_ (hinp, Vinp);
+    void _write_ (const MatrixXd&, double *);
 
 //  allocate memory for NS-dependent quantities
     if (!guess_read)
@@ -72,7 +75,7 @@ void FCIWRAP::_solve_ (const MatrixXd& hinp, double *Vinp)
     }
 
 //  No Time To Explain! Get On The Car!
-    _FCIman_ (N, No, N0MAX, 1, h, Vinp, Xi, &Ei, &Sym, P, G);
+    fci._FCIman_ (h, Vinp, Xi, &Ei, &Sym, P, G);
 }
 
 void _write_ (const MatrixXd& h, double *V)
