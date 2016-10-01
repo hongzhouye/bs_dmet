@@ -51,7 +51,7 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
     bool converge = false;
     VectorXd fx;    fx.setZero (frag.Nopt);
     VectorXd dx;    fx.setZero (frag.Nopt);
-    int iter = 0, siter;
+    int iter = 0, siter, siter_tot = 0;
     double scale, obj_norm;
     MatrixXd J;
 
@@ -87,6 +87,7 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
             &scale, u, dx, frag);
         t2 = high_resolution_clock::now ();
 		dt_brent += duration_cast<duration<double> >(t2 - t1);
+        siter_tot += siter;
 
         if (scale < 0)  cout << "Warning: stepped backwards.\n\n";
         //frag.dfci.guess_read = false;
@@ -114,8 +115,10 @@ VectorXd _bfgs_opt_ (VectorXd (*func) (VectorXd&, FRAG&), VectorXd& u,
     cout << "=========================\n";
     cout << "|     TIME SUMMARY      |\n";
     cout << "=========================\n";
-    cout << "JAC Time: " << dt_Jac.count () << " sec" << endl;
-    cout << "BRT Time: " << dt_brent.count () << " sec" << endl << endl;
+    printf ("JAC wall time: %10.7f sec (per FCI: %10.7f sec)\n",
+        dt_Jac.count (), dt_Jac.count () / (iter * frag.Nopt * 4.));
+    printf ("BRT wall time: %10.7f sec (per FCI: %10.7f sec)\n\n",
+        dt_brent.count (), dt_brent.count () / siter_tot);
 
     return u;
 }

@@ -880,4 +880,9 @@ void _FCIman_ (int N, int No, int N0MAX, int NS, double *h, double *V,
 #undef THRESH
 #undef MAXITER
 
+void _frank_hack_ ()
+{
+
+}
+
 #endif
