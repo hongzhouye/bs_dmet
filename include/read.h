@@ -119,7 +119,7 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
                         {
                             getline (input, line);
                             vs fragstr = _split_ (line, ' ');
-                            frag.fragments[fragstr[0]] = stoi (fragstr[1]);
+                            frag.fragsite.push_back (stoi (fragstr[1]));
                         }
                     }
                     // center site(s)
@@ -127,10 +127,8 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
                     {
                         vs csitestr = _split_ (_split_eq_ (line)[1], ';');
                         frag.Ncenter = csitestr.size ();     // # of center sites
-                        frag.center = new int [frag.Ncenter];
                         for (int i = 0; i < frag.Ncenter; i++)
-                        // convert names to indices
-                            frag.center[i] = frag.fragments[csitestr[i]];
+                            frag.center.push_back (stoi (csitestr[i]));
                     }
                     // population constraints
                     else if (_uppercase_ (_split_ (line, ' ')[0]) == "NPOP")
@@ -142,7 +140,7 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
                             vs templine = _split_ (line, ';');
                             vi tempvi;
                             for (int j = 0; j < templine.size (); j++)
-                                tempvi.push_back (frag.fragments[templine[j]]);
+                                tempvi.push_back (stoi (templine[j]));
                             frag.popcon.push_back (tempvi);
                         }
                     }
@@ -185,11 +183,11 @@ void _read_ (char *fname, HUBBARD& hub, FRAG& frag)
                             vs badstr = _split_ (templine[0], ';');
                             vi tempbad;
                             for (int j = 0; j < badstr.size (); j++)
-                                tempbad.push_back (frag.fragments[badstr[j]]);
+                                tempbad.push_back (stoi (badstr[j]));
                             frag.bad_2econ.push_back (tempbad);
                             // good sites (always one site!!! No need to split.)
                             string goodstr = templine[1];
-                            frag.good_2econ.push_back (frag.fragments[goodstr]);
+                            frag.good_2econ.push_back (stoi (goodstr));
                         }
                     }
                     else if (_uppercase_ (line) == "&END FRAGMENT") break;

@@ -14,10 +14,11 @@ class FRAG
         double target_filling;
 
         int Nimp;           // # of sites
-        msi fragments;      // map<string, int>
+        //msi fragments;      // map<string, int>
+        vi fragsite;        // lattice sites of frag
 
         int Ncenter;        // # of center sites
-        int *center;        // index of center site
+        vi center;          // index of center site
 
         int Npop;           // # of pop constraints
         vvi popcon;         // popcon[i][j]: the i-th constr
@@ -59,9 +60,7 @@ void FRAG::_init_ (const HUBBARD& hub)
 
     // set up sm
     sm._init_ (hub.K, hub.N, Nimp);
-    int count = 0;
-	for (auto i = fragments.begin (); i != fragments.end (); i++)
-		sm.frag[count++] = i->second;
+    for (int i = 0; i < Nimp; i++)  sm.frag[i] = fragsite[i];
 
     // Schmidt decomposition
     sm._schmidt_ (hub.C);

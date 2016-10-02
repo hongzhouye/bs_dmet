@@ -44,7 +44,7 @@ void DMET::_dmet_init_ (char *fname)
 
 // Bootstrap init
     bs._init_ (hub);
-
+/*
 //  Does fci with 2e interaction turned off agree with HF?
     FCIWRAP fci;
     fci._init_ (2 * bs.frag.Nimp, bs.frag.Nimp, 2);
@@ -92,6 +92,7 @@ void DMET::_dmet_init_ (char *fname)
     scfcheck._init_ (hfrankdir, Vfrankdir, 2, 1, 1E-6, "core", 1, 0);
     scfcheck._scf_ ();
     _dmet_energy_ (hfrankdir, Vfrankdir, scfcheck.P, 1);
+*/
 }
 
 void DMET::_bs_dmet_ ()
@@ -179,18 +180,12 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     const FRAG& frag = bs.frag;
 
     // center
-    double *Ec1, *Ec2;
-    Ec1 = _darray_gen_ (frag.Ncenter);
-    Ec2 = _darray_gen_ (frag.Ncenter);
+    dv1 Ec1 (frag.Ncenter);
+    dv1 Ec2 (frag.Ncenter);
     for (int i = 0; i < frag.Ncenter; i++)
     {
-        int ind = 0;
-        for (auto I = frag.fragments.begin (); I != frag.fragments.end (); I++)
-            if (I->second == frag.center[i])    break;
-            else    ind++;
-
-        for (nu = 0; nu < K; nu++)
-            Ec1[i] += h(ind, nu) * P(nu, ind);
+        int ind = frag.center [i];
+        for (nu = 0; nu < K; nu++)  Ec1[i] += h(ind, nu) * P(nu, ind);
         Ec1[i] *= 2.;
 
         for (nu = 0; nu < K; nu++)
@@ -251,7 +246,7 @@ double DMET::_dmet_energy_ (MatrixXd& h, double *V, MatrixXd& P, double *G, int 
     return E1 + E2;
 }
 
-void DMET::_dmet_check_ ()
+/*void DMET::_dmet_check_ ()
 {
     cout << "=======================" << endl;
     cout << "|      read check     |" << endl;
@@ -339,6 +334,6 @@ void DMET::_dmet_check_ ()
     dfci._2PDM_ ();
     printf ("TROYFCI-in-HF embedding energy: %18.16f\n\n",
 			_dmet_energy_ (bs.frag.h, bs.frag.V, dfci.P, dfci.G, dfci.N));
-}
+}*/
 
 #endif
