@@ -683,7 +683,7 @@ void TROYFCI::_FCIman_ (double *h, double *V, vMatrixXd& Xi,
     int i,j,k,l,m,a,b,ij,kl,ab,ii,jj,kk,ll,ierr,iter,Info;
     int iX,iS,iSpin,iSym;
     iv1 Iocc(No), Isubst(No), Istr(N0);
-    double Energy, DE, fac, norm, eps, *Uncertainty;
+    double Energy, DE, fac, norm, eps, *Uncertainty, offset;
     MatrixXd Hd, H0, U0, X, X1, XH, X1H, Xtmp;
     VectorXd E0;    Matrix2d Hm, U; Vector2d Eig;
     const double zero = 0., one = 1., two = 2., three = 3., four = 4.;
@@ -750,11 +750,10 @@ void TROYFCI::_FCIman_ (double *h, double *V, vMatrixXd& Xi,
         fac = 1.;  iter = 0;
         while (fabs (fac) > THRESH && iter < MAXITER)
         {
-            iter++; DE = Energy;
+            iter++; DE = Energy; offset = (iter < 2) ? (1.E-10) : (0);
 //  Make the (orthogonal component of the) Davidson Update
             X1 = -(XH - Energy * X).cwiseQuotient (Hd -
-                MatrixXd::Constant (Nstr, Nstr, Energy));
-
+                MatrixXd::Constant (Nstr, Nstr, Energy + offset));
 //  Build (H0-Energy)^-1 (excluding eigenvalues that might blow up)
             H0.setZero ();
             for (k = 0; k < N0 * N0; k++)
@@ -823,7 +822,6 @@ void TROYFCI::_FCIman_ (double *h, double *V, vMatrixXd& Xi,
                 fac = U(1, 0);
                 X = U(0, 0) * X + U(1, 0) * X1;
                 XH = U(0, 0) * XH + U(1, 0) * X1H;
-                //if (iter == 51) printf ("%18.16e  %18.16e\n", U(0,0),U(1,0));
             }
             else
 //  If convergence is slow, sometimes it is because we are
@@ -847,7 +845,7 @@ void TROYFCI::_FCIman_ (double *h, double *V, vMatrixXd& Xi,
 
 //  End of the Loop for FCI iteration
         }
-//          printf ("Done after %4d iterations.\n", iter);
+          //printf ("Done after %4d iterations.\n", iter);
 //  Energy, Uncertainty for THIS State
         _HX_ (N, No, N2, Max1, Max2, Nstr, Ex1, Ex2, X, h, V, XH);
         Energy = _MDOT_(X,XH)/X.squaredNorm ();

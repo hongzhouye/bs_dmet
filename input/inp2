@@ -1,9 +1,9 @@
 &hubbard
 
-K = 240 
-N = 120
+K = 4
+N = 2
 BC = a
-U = 8
+U = 4
 
 &end hubbard
 

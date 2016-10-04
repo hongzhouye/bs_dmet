@@ -1,6 +1,6 @@
 &hubbard
 
-K = 7 
+K = 12
 N = 3
 BC = p
 U = 4
@@ -8,20 +8,16 @@ U = 4
 &end hubbard
 
 &fragment
-Nimp = 3
+Nimp = 1
 0 0
-1 1
-2 2
 
-Center = 1
+Center = 0
 
-Npop = 2
-0;2
-1
+Npop = 1
+0
 
 N1e = 0
 
-N2e = 1
-0;2 1
+N2e = 0
 
 &end fragment
